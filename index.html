@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G-Drive Multi Cloner</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <title>G-Drive Multi Cloner (Turbo)</title>
+    <link href="[https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap](https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap)" rel="stylesheet">
+    <script src="[https://cdn.jsdelivr.net/npm/sweetalert2@11](https://cdn.jsdelivr.net/npm/sweetalert2@11)"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js](https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js)"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js](https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js)"></script>
     
     <style>
         :root {
@@ -43,23 +43,16 @@
         .form-group { margin-bottom: 1.2rem; }
         label { display: block; margin-bottom: 0.6rem; color: #d1d8e0; font-size: 0.85rem; font-weight: 500; }
         
-        .header-row {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;
-        }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
         .header-row label { margin-bottom: 0; }
 
         .btn-clear {
             width: auto !important; padding: 4px 10px !important; font-size: 0.75rem !important;
-            background: rgba(255, 71, 87, 0.2) !important;
-            border: 1px solid rgba(255, 71, 87, 0.5) !important;
-            color: #ff4757 !important; margin: 0 !important;
-            border-radius: 6px !important; letter-spacing: 0.5px !important;
-            animation: none !important;
+            background: rgba(255, 71, 87, 0.2) !important; border: 1px solid rgba(255, 71, 87, 0.5) !important;
+            color: #ff4757 !important; margin: 0 !important; border-radius: 6px !important; 
+            letter-spacing: 0.5px !important; animation: none !important;
         }
-        .btn-clear:hover {
-            background: rgba(255, 71, 87, 0.4) !important; color: white !important;
-            transform: none !important; box-shadow: none !important;
-        }
+        .btn-clear:hover { background: rgba(255, 71, 87, 0.4) !important; color: white !important; }
 
         textarea {
             width: 100%; padding: 12px 15px; background: var(--input-bg);
@@ -84,15 +77,13 @@
             position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px;
             background-color: white; transition: .4s; border-radius: 50%;
         }
-        input:checked + .slider { background-color: #2ed573; }
-        input:checked + .slider:before { transform: translateX(26px); }
+        input:checked + .slider { background-color: #2ed573; } input:checked + .slider:before { transform: translateX(26px); }
 
         .btn-group { display: flex; gap: 10px; }
         button {
             width: 100%; border: none; padding: 14px; border-radius: 10px;
             font-size: 1rem; font-weight: 600; cursor: pointer;
-            transition: transform 0.2s; text-transform: uppercase; letter-spacing: 1px;
-            color: white;
+            transition: transform 0.2s; text-transform: uppercase; letter-spacing: 1px; color: white;
         }
         #submitBtn {
             background: linear-gradient(45deg, #00d2ff, #3a7bd5, #ff00de);
@@ -109,16 +100,9 @@
             border: 1px solid rgba(244, 180, 0, 0.3); padding: 5px; border-radius: 5px; background: rgba(0,0,0,0.2);
         }
         .timer-display {
-            text-align: center;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1.3rem;
-            color: #fff;
-            margin-bottom: 10px;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
-            letter-spacing: 2px;
+            text-align: center; font-family: 'Courier New', Courier, monospace; font-size: 1.3rem; color: #fff;
+            margin-bottom: 10px; font-weight: bold; text-shadow: 0 0 10px rgba(0, 210, 255, 0.5); letter-spacing: 2px;
         }
-
         .progress-container { width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-top: 5px;}
         .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #f4b400, #ff00de, #00d2ff); border-radius: 10px; transition: width 0.4s ease; }
         .log-area {
@@ -130,16 +114,13 @@
         .log-item { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .log-success { color: #00d2ff; } .log-error { color: #ff4757; } .log-skip { color: #ffa502; } .log-info { color: #ddd; }
 
-        .result-btn-container {
-            display: flex; flex-direction: column; gap: 8px; margin-top: 15px; max-height: 150px; overflow-y: auto;
-        }
+        .result-btn-container { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; max-height: 150px; overflow-y: auto; }
         .result-link-btn {
             display: block; padding: 10px; background: rgba(0, 210, 255, 0.15); 
             border: 1px solid rgba(0, 210, 255, 0.5); color: #00d2ff; text-decoration: none; 
             border-radius: 6px; font-size: 0.9em; transition: 0.2s; text-align: center;
         }
         .result-link-btn:hover { background: rgba(0, 210, 255, 0.3); color: white; }
-
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
@@ -158,7 +139,7 @@
             <label for="folderUrls">Daftar Link Sumber (File atau Folder)</label>
             <button id="clearInputBtn" class="btn-clear">Clear</button>
         </div>
-        <textarea id="folderUrls" placeholder="https://drive.google.com/drive/folders/AAAA...&#10;https://drive.google.com/file/d/BBBB..."></textarea>
+        <textarea id="folderUrls" placeholder="[https://drive.google.com/drive/folders/AAAA...&#10;https://drive.google.com/file/d/BBBB](https://drive.google.com/drive/folders/AAAA...&#10;https://drive.google.com/file/d/BBBB)..."></textarea>
     </div>
 
     <div class="toggle-container">
@@ -179,9 +160,7 @@
 
     <div class="progress-wrapper" id="progressWrapper">
         <div class="global-status" id="globalStatus">Menunggu...</div>
-        
         <div class="timer-display" id="timerDisplay">00:00:00</div>
-
         <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#b8c6db;">
             <span id="progressText">Progress...</span>
             <span id="progressPercent">0%</span>
@@ -194,8 +173,11 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVMco1a7VA7GkY6OyxFm239RXZlqMsTUy9kheMJthucelNETE9Zu9B9jqMB9mgyWbr/exec"; 
-    const CONCURRENCY_LIMIT = 3; 
+    // --- KONFIGURASI URL SCRIPT ---
+    const SCRIPT_URL = "[https://script.google.com/macros/s/AKfycbzVMco1a7VA7GkY6OyxFm239RXZlqMsTUy9kheMJthucelNETE9Zu9B9jqMB9mgyWbr/exec](https://script.google.com/macros/s/AKfycbzVMco1a7VA7GkY6OyxFm239RXZlqMsTUy9kheMJthucelNETE9Zu9B9jqMB9mgyWbr/exec)"; 
+    
+    // --- TURBO MODE: 5 WORKERS ---
+    const CONCURRENCY_LIMIT = 5; 
 
     const submitBtn = document.getElementById('submitBtn');
     const stopBtn = document.getElementById('stopBtn');
@@ -211,12 +193,8 @@
     let isStopRequested = false;
     let timerInterval;
 
-    clearInputBtn.addEventListener('click', () => {
-        folderUrlsInput.value = '';
-        folderUrlsInput.focus();
-    });
+    clearInputBtn.addEventListener('click', () => { folderUrlsInput.value = ''; folderUrlsInput.focus(); });
 
-    // Check if tsParticles is loaded to avoid errors if CDN fails
     if (typeof tsParticles !== 'undefined') {
         tsParticles.load("tsparticles", {
             fpsLimit: 60,
@@ -253,8 +231,7 @@
         const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
 
-        isStopRequested = false; setUIState('running'); clearLog();
-        startTimer();
+        isStopRequested = false; setUIState('running'); clearLog(); startTimer();
 
         if (bgToggle.checked) {
             try {
@@ -282,7 +259,6 @@
 
             try {
                 addLog(`▶ [${i+1}/${urls.length}] Connecting: ${shortUrl(currentUrl)}`, 'info');
-                
                 const result = await processSingleFolder(currentUrl);
                 successCount++;
                 const itemType = result.type === 'file' ? 'File' : 'Folder';
@@ -299,8 +275,7 @@
             }
         }
 
-        setUIState('stopped');
-        stopTimer();
+        setUIState('stopped'); stopTimer();
         
         if (isStopRequested) {
             addLog("⛔ Proses dihentikan.", "error"); globalStatus.textContent = "DIHENTIKAN";
@@ -363,10 +338,9 @@
                     updateProgress(p.percent, `${actionText}: ${p.processed}/${p.total}`);
                     finalProcessed = p.processed; finalSizeStr = p.currentSize;
 
+                    // Update URL jika tipe FILE dan batch selesai
                     if (res.processedList && res.processedList.length > 0) {
-                        if (sourceType === 'file') {
-                            targetUrl = res.processedList[0].url; 
-                        }
+                        if (sourceType === 'file') targetUrl = res.processedList[0].url; 
                     }
 
                     if (res.action === 'complete') isFinished = true;
