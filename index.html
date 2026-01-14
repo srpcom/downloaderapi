@@ -108,7 +108,6 @@
             text-align: center; margin-bottom: 5px; font-weight: 600; color: #f4b400; 
             border: 1px solid rgba(244, 180, 0, 0.3); padding: 5px; border-radius: 5px; background: rgba(0,0,0,0.2);
         }
-        /* TIMER STYLE */
         .timer-display {
             text-align: center;
             font-family: 'Courier New', Courier, monospace;
@@ -181,7 +180,6 @@
     <div class="progress-wrapper" id="progressWrapper">
         <div class="global-status" id="globalStatus">Menunggu...</div>
         
-        <!-- Timer Display -->
         <div class="timer-display" id="timerDisplay">00:00:00</div>
 
         <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#b8c6db;">
@@ -196,7 +194,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzMhTT8zwLTV26UtM0T2nd8tsp9U8xjoFNGHp1h-xJ30ZZwjVORtEBiqXe8laV7MhDcg/exec"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVMco1a7VA7GkY6OyxFm239RXZlqMsTUy9kheMJthucelNETE9Zu9B9jqMB9mgyWbr/exec"; 
     const CONCURRENCY_LIMIT = 3; 
 
     const submitBtn = document.getElementById('submitBtn');
@@ -213,31 +211,33 @@
     let isStopRequested = false;
     let timerInterval;
 
-    // --- CLEAR BUTTON HANDLER ---
     clearInputBtn.addEventListener('click', () => {
         folderUrlsInput.value = '';
         folderUrlsInput.focus();
     });
 
-    tsParticles.load("tsparticles", {
-        fpsLimit: 60,
-        particles: {
-            number: { value: 20, density: { enable: true, area: 800 } },
-            shape: { type: ["char", "circle"], character: [ { value: ["📂", "💾", "🚀", "✨", "📄"], font: "Verdana", weight: "400" } ] },
-            color: { value: ["#4285F4", "#DB4437", "#F4B400", "#0F9D58", "#ffffff"] },
-            opacity: { value: 0.4, random: true }, size: { value: { min: 10, max: 20 }, random: true },
-            move: { enable: true, speed: 1, direction: "none", random: true, outModes: { default: "out" } }
-        },
-        emitters: {
-            rate: { delay: 3, quantity: 1 }, position: { x: 50, y: 50 },
+    // Check if tsParticles is loaded to avoid errors if CDN fails
+    if (typeof tsParticles !== 'undefined') {
+        tsParticles.load("tsparticles", {
+            fpsLimit: 60,
             particles: {
-                shape: { type: "char", character: { value: ["✉️", "📦"], font: "Verdana" } },
-                size: { value: { min: 60, max: 90 } }, opacity: { value: 1 },
-                move: { enable: true, speed: 1, outModes: { default: "destroy" } },
-                links: { enable: false }
+                number: { value: 20, density: { enable: true, area: 800 } },
+                shape: { type: ["char", "circle"], character: [ { value: ["📂", "💾", "🚀", "✨", "📄"], font: "Verdana", weight: "400" } ] },
+                color: { value: ["#4285F4", "#DB4437", "#F4B400", "#0F9D58", "#ffffff"] },
+                opacity: { value: 0.4, random: true }, size: { value: { min: 10, max: 20 }, random: true },
+                move: { enable: true, speed: 1, direction: "none", random: true, outModes: { default: "out" } }
+            },
+            emitters: {
+                rate: { delay: 3, quantity: 1 }, position: { x: 50, y: 50 },
+                particles: {
+                    shape: { type: "char", character: { value: ["✉️", "📦"], font: "Verdana" } },
+                    size: { value: { min: 60, max: 90 } }, opacity: { value: 1 },
+                    move: { enable: true, speed: 1, outModes: { default: "destroy" } },
+                    links: { enable: false }
+                }
             }
-        }
-    });
+        });
+    }
 
     stopBtn.addEventListener('click', async () => {
         isStopRequested = true; stopBtn.disabled = true; stopBtn.textContent = "Stopping...";
@@ -254,14 +254,15 @@
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
 
         isStopRequested = false; setUIState('running'); clearLog();
-        startTimer(); // Mulai Timer
+        startTimer();
 
         if (bgToggle.checked) {
             try {
                 addLog("Mengirim data ke server...", "info");
                 const res = await sendRequest({ action: 'start_background_multi', urls: urls });
                 if (res.status === 'success') {
-                    addLog("✅ " + res.message, "success"); globalStatus.textContent = "BERJALAN DI SERVER"; launchConfetti();
+                    addLog("✅ " + res.message, "success"); globalStatus.textContent = "BERJALAN DI SERVER"; 
+                    if (typeof launchConfetti === 'function') launchConfetti();
                     Swal.fire({ icon: 'success', title: 'Started!', text: 'Proses berjalan di server.', confirmButtonText: 'Oke' });
                 } else { addLog("❌ Gagal: " + res.message, "error"); setUIState('stopped'); stopTimer(); }
             } catch (e) { addLog("❌ Error: " + e.message, "error"); setUIState('stopped'); stopTimer(); }
@@ -299,12 +300,13 @@
         }
 
         setUIState('stopped');
-        stopTimer(); // Hentikan Timer saat selesai
+        stopTimer();
         
         if (isStopRequested) {
             addLog("⛔ Proses dihentikan.", "error"); globalStatus.textContent = "DIHENTIKAN";
         } else {
-            globalStatus.textContent = "SELESAI"; launchConfetti();
+            globalStatus.textContent = "SELESAI"; 
+            if (typeof launchConfetti === 'function') launchConfetti();
             let linksHtml = "";
             if (resultLinks.length > 0) {
                 linksHtml += `<div class="result-btn-container">`;
@@ -379,6 +381,7 @@
     }
 
     function launchConfetti() {
+        if (typeof confetti === 'undefined') return;
         var duration = 3000; var end = Date.now() + duration;
         var interval = setInterval(function() {
             if (Date.now() > end) return clearInterval(interval);
@@ -419,7 +422,6 @@
     function clearLog() { logArea.innerHTML = ''; }
     function shortUrl(url) { return url.length > 40 ? url.substring(0, 35) + "..." : url; }
 
-    // --- TIMER FUNCTIONS ---
     function startTimer() {
         const startTime = Date.now();
         timerDisplay.textContent = "00:00:00";
@@ -429,18 +431,11 @@
             const hours = Math.floor(elapsedTime / 3600000);
             const minutes = Math.floor((elapsedTime % 3600000) / 60000);
             const seconds = Math.floor((elapsedTime % 60000) / 1000);
-            timerDisplay.textContent = 
-                `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            timerDisplay.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
         }, 1000);
     }
-
-    function stopTimer() {
-        clearInterval(timerInterval);
-    }
-
-    function pad(num) {
-        return num.toString().padStart(2, '0');
-    }
+    function stopTimer() { clearInterval(timerInterval); }
+    function pad(num) { return num.toString().padStart(2, '0'); }
 </script>
 
 </body>
