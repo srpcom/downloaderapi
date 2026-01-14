@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G-Drive Multi Cloner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #00d2ff; --secondary: #ff00de;
+            --glass-bg: rgba(20, 20, 30, 0.6); --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff; --input-bg: rgba(0, 0, 0, 0.3);
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0f0c29; background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            margin: 0; padding: 20px; color: var(--text-color); overflow-x: hidden; position: relative;
+        }
+        #tsparticles { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 0; }
+        
+        .container {
+            position: relative; z-index: 1; background: var(--glass-bg);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            padding: 2rem; border-radius: 20px; border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); width: 100%; max-width: 550px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 {
+            font-size: 1.8rem; margin-bottom: 0.5rem; text-align: center;
+            background: linear-gradient(to right, #00d2ff, #ff00de, #f4b400); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-weight: 700; text-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
+        }
+        p.subtitle { text-align: center; color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 0.6rem; color: #d1d8e0; font-size: 0.85rem; font-weight: 500; }
+        
+        .header-row {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;
+        }
+        .header-row label { margin-bottom: 0; }
+
+        .btn-clear {
+            width: auto !important; padding: 4px 10px !important; font-size: 0.75rem !important;
+            background: rgba(255, 71, 87, 0.2) !important;
+            border: 1px solid rgba(255, 71, 87, 0.5) !important;
+            color: #ff4757 !important; margin: 0 !important;
+            border-radius: 6px !important; letter-spacing: 0.5px !important;
+            animation: none !important;
+        }
+        .btn-clear:hover {
+            background: rgba(255, 71, 87, 0.4) !important; color: white !important;
+            transform: none !important; box-shadow: none !important;
+        }
+
+        textarea {
+            width: 100%; padding: 12px 15px; background: var(--input-bg);
+            border: 1px solid var(--glass-border); border-radius: 10px;
+            font-size: 0.9rem; color: white; box-sizing: border-box;
+            font-family: 'Poppins', sans-serif; resize: vertical; min-height: 120px;
+        }
+        textarea:focus { outline: none; border-color: var(--primary); background: rgba(255, 255, 255, 0.1); }
+
+        .toggle-container {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;
+        }
+        .toggle-label { font-size: 0.9rem; font-weight: 600; color: #00d2ff; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #2ed573; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .btn-group { display: flex; gap: 10px; }
+        button {
+            width: 100%; border: none; padding: 14px; border-radius: 10px;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: transform 0.2s; text-transform: uppercase; letter-spacing: 1px;
+            color: white;
+        }
+        #submitBtn {
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5, #ff00de);
+            background-size: 200% 200%; animation: gradientAnim 3s ease infinite;
+        }
+        #stopBtn { background: #ff4757; display: none; }
+        @keyframes gradientAnim { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        button:disabled { background: #444; color: #aaa; cursor: not-allowed; animation: none; transform: none; box-shadow: none;}
+
+        .progress-wrapper { margin-top: 20px; display: none; }
+        .global-status { 
+            text-align: center; margin-bottom: 5px; font-weight: 600; color: #f4b400; 
+            border: 1px solid rgba(244, 180, 0, 0.3); padding: 5px; border-radius: 5px; background: rgba(0,0,0,0.2);
+        }
+        /* TIMER STYLE */
+        .timer-display {
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.3rem;
+            color: #fff;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .progress-container { width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-top: 5px;}
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #f4b400, #ff00de, #00d2ff); border-radius: 10px; transition: width 0.4s ease; }
+        .log-area {
+            margin-top: 15px; max-height: 150px; overflow-y: auto; 
+            background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px;
+            font-size: 0.75rem; font-family: monospace; display: none;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .log-item { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .log-success { color: #00d2ff; } .log-error { color: #ff4757; } .log-skip { color: #ffa502; } .log-info { color: #ddd; }
+
+        .result-btn-container {
+            display: flex; flex-direction: column; gap: 8px; margin-top: 15px; max-height: 150px; overflow-y: auto;
+        }
+        .result-link-btn {
+            display: block; padding: 10px; background: rgba(0, 210, 255, 0.15); 
+            border: 1px solid rgba(0, 210, 255, 0.5); color: #00d2ff; text-decoration: none; 
+            border-radius: 6px; font-size: 0.9em; transition: 0.2s; text-align: center;
+        }
+        .result-link-btn:hover { background: rgba(0, 210, 255, 0.3); color: white; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div id="tsparticles"></div>
+
+<div class="container">
+    <h1>G-Drive Multi Cloner</h1>
+    <p class="subtitle">Bulk Folder & File Transfer</p>
+    
+    <div class="form-group">
+        <div class="header-row">
+            <label for="folderUrls">Daftar Link Sumber (File atau Folder)</label>
+            <button id="clearInputBtn" class="btn-clear">Clear</button>
+        </div>
+        <textarea id="folderUrls" placeholder="https://drive.google.com/drive/folders/AAAA...&#10;https://drive.google.com/file/d/BBBB..."></textarea>
+    </div>
+
+    <div class="toggle-container">
+        <span class="toggle-label">Run in Background (Server-Side)</span>
+        <label class="switch">
+            <input type="checkbox" id="bgToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+    <div style="font-size: 0.75rem; color: #aaa; margin-top: -10px; margin-bottom: 15px; text-align: right;">
+        *Jika ON: Proses berjalan meski tab ditutup.
+    </div>
+
+    <div class="btn-group">
+        <button id="submitBtn">Mulai Proses</button>
+        <button id="stopBtn">STOP 🛑</button>
+    </div>
+
+    <div class="progress-wrapper" id="progressWrapper">
+        <div class="global-status" id="globalStatus">Menunggu...</div>
+        
+        <!-- Timer Display -->
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
+
+        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#b8c6db;">
+            <span id="progressText">Progress...</span>
+            <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="log-area" id="logArea"></div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzMhTT8zwLTV26UtM0T2nd8tsp9U8xjoFNGHp1h-xJ30ZZwjVORtEBiqXe8laV7MhDcg/exec"; 
+    const CONCURRENCY_LIMIT = 3; 
+
+    const submitBtn = document.getElementById('submitBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const bgToggle = document.getElementById('bgToggle');
+    const folderUrlsInput = document.getElementById('folderUrls');
+    const clearInputBtn = document.getElementById('clearInputBtn');
+    const progressWrapper = document.getElementById('progressWrapper');
+    const progressBar = document.getElementById('progressBar');
+    const logArea = document.getElementById('logArea');
+    const globalStatus = document.getElementById('globalStatus');
+    const timerDisplay = document.getElementById('timerDisplay');
+
+    let isStopRequested = false;
+    let timerInterval;
+
+    // --- CLEAR BUTTON HANDLER ---
+    clearInputBtn.addEventListener('click', () => {
+        folderUrlsInput.value = '';
+        folderUrlsInput.focus();
+    });
+
+    tsParticles.load("tsparticles", {
+        fpsLimit: 60,
+        particles: {
+            number: { value: 20, density: { enable: true, area: 800 } },
+            shape: { type: ["char", "circle"], character: [ { value: ["📂", "💾", "🚀", "✨", "📄"], font: "Verdana", weight: "400" } ] },
+            color: { value: ["#4285F4", "#DB4437", "#F4B400", "#0F9D58", "#ffffff"] },
+            opacity: { value: 0.4, random: true }, size: { value: { min: 10, max: 20 }, random: true },
+            move: { enable: true, speed: 1, direction: "none", random: true, outModes: { default: "out" } }
+        },
+        emitters: {
+            rate: { delay: 3, quantity: 1 }, position: { x: 50, y: 50 },
+            particles: {
+                shape: { type: "char", character: { value: ["✉️", "📦"], font: "Verdana" } },
+                size: { value: { min: 60, max: 90 } }, opacity: { value: 1 },
+                move: { enable: true, speed: 1, outModes: { default: "destroy" } },
+                links: { enable: false }
+            }
+        }
+    });
+
+    stopBtn.addEventListener('click', async () => {
+        isStopRequested = true; stopBtn.disabled = true; stopBtn.textContent = "Stopping...";
+        if (bgToggle.checked) {
+            addLog("Mengirim sinyal stop ke server...", "info");
+            try { const res = await sendRequest({ action: 'stop_background' }); addLog(res.message, "success"); } catch (e) { addLog("Gagal stop: " + e.message, "error"); }
+        } else addLog("Menghentikan proses browser...", "info");
+        stopTimer();
+    });
+
+    submitBtn.addEventListener('click', async () => {
+        const rawText = folderUrlsInput.value;
+        const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+        if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
+
+        isStopRequested = false; setUIState('running'); clearLog();
+        startTimer(); // Mulai Timer
+
+        if (bgToggle.checked) {
+            try {
+                addLog("Mengirim data ke server...", "info");
+                const res = await sendRequest({ action: 'start_background_multi', urls: urls });
+                if (res.status === 'success') {
+                    addLog("✅ " + res.message, "success"); globalStatus.textContent = "BERJALAN DI SERVER"; launchConfetti();
+                    Swal.fire({ icon: 'success', title: 'Started!', text: 'Proses berjalan di server.', confirmButtonText: 'Oke' });
+                } else { addLog("❌ Gagal: " + res.message, "error"); setUIState('stopped'); stopTimer(); }
+            } catch (e) { addLog("❌ Error: " + e.message, "error"); setUIState('stopped'); stopTimer(); }
+        } else {
+            await runForegroundQueue(urls);
+        }
+    });
+
+    async function runForegroundQueue(urls) {
+        let successCount = 0; let failCount = 0; let grandTotalFiles = 0; let grandTotalBytes = 0; let resultLinks = [];
+
+        for (let i = 0; i < urls.length; i++) {
+            if (isStopRequested) break;
+            const currentUrl = urls[i];
+            globalStatus.textContent = `Memproses Link ${i + 1} dari ${urls.length}`;
+            updateProgress(0, "Inisialisasi...");
+
+            try {
+                addLog(`▶ [${i+1}/${urls.length}] Connecting: ${shortUrl(currentUrl)}`, 'info');
+                
+                const result = await processSingleFolder(currentUrl);
+                successCount++;
+                const itemType = result.type === 'file' ? 'File' : 'Folder';
+                addLog(`✅ Selesai: ${itemType} "${result.name}" (${result.files} items).`, 'success');
+                
+                grandTotalFiles += result.files; grandTotalBytes += parseBytesToNum(result.sizeStr);
+                
+                if (result.url) {
+                    const icon = result.type === 'file' ? '📄' : '📂';
+                    resultLinks.push({ name: `${icon} ${result.name}`, url: result.url });
+                }
+            } catch (error) {
+                failCount++; addLog(`❌ Gagal: ${error.message}`, 'error');
+            }
+        }
+
+        setUIState('stopped');
+        stopTimer(); // Hentikan Timer saat selesai
+        
+        if (isStopRequested) {
+            addLog("⛔ Proses dihentikan.", "error"); globalStatus.textContent = "DIHENTIKAN";
+        } else {
+            globalStatus.textContent = "SELESAI"; launchConfetti();
+            let linksHtml = "";
+            if (resultLinks.length > 0) {
+                linksHtml += `<div class="result-btn-container">`;
+                resultLinks.forEach(link => {
+                    linksHtml += `<a href="${link.url}" target="_blank" class="result-link-btn">Buka: ${link.name}</a>`;
+                });
+                linksHtml += `</div>`;
+            } else if (successCount > 0) {
+                 linksHtml += `<p style="color:#aaa; font-size:0.8em; margin-top:10px;">(Link hasil tidak tersedia)</p>`;
+            }
+
+            Swal.fire({
+                icon: 'success', title: '🎉 Selesai Semua! 🎉',
+                html: `
+                    <div style="text-align:left; color:#ddd;">
+                        <p>Waktu: <b>${timerDisplay.textContent}</b></p>
+                        <p>Total Item Disalin: <b>${grandTotalFiles}</b></p>
+                        <p>Total Ukuran: <b>${formatBytes(grandTotalBytes)}</b></p>
+                        <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+                        <p style="font-size:0.9em">Berhasil: ${successCount} | Gagal: ${failCount}</p>
+                        ${linksHtml}
+                    </div>
+                `,
+                background: '#111116', color: '#fff', confirmButtonText: 'Mantap!', confirmButtonColor: '#ff00de'
+            });
+        }
+    }
+
+    async function processSingleFolder(url) {
+        if (isStopRequested) return { files: 0, sizeStr: "0 B", url: null, type: 'unknown' };
+        
+        const initRes = await sendRequest({ action: 'initialize', url: url, name: "" });
+        if (initRes.status !== 'success') throw new Error(initRes.message);
+
+        const jobId = initRes.jobId; const total = initRes.totalFiles;
+        const sourceName = initRes.sourceName || "Item";
+        let targetUrl = initRes.targetUrl; // Default folder URL
+        const sourceType = initRes.type || 'folder';
+
+        const actionText = sourceType === 'file' ? 'Menyalin File' : 'Menyalin Folder';
+        document.getElementById('progressText').textContent = `${actionText}: ${sourceName}`;
+
+        if (total === 0) return { files: 0, sizeStr: "0 B", url: targetUrl, name: sourceName, type: sourceType };
+
+        let finalProcessed = 0; let finalSizeStr = "0 B"; let isFinished = false; let workers = [];
+        
+        const workerTask = async () => {
+            while (!isFinished && !isStopRequested) {
+                try {
+                    const res = await sendRequest({ action: 'process_batch', jobId: jobId });
+                    if (res.status !== 'success') throw new Error(res.message);
+                    
+                    const p = res.progress;
+                    updateProgress(p.percent, `${actionText}: ${p.processed}/${p.total}`);
+                    finalProcessed = p.processed; finalSizeStr = p.currentSize;
+
+                    if (res.processedList && res.processedList.length > 0) {
+                        if (sourceType === 'file') {
+                            targetUrl = res.processedList[0].url; 
+                        }
+                    }
+
+                    if (res.action === 'complete') isFinished = true;
+                } catch (e) { await new Promise(r => setTimeout(r, 2000)); }
+            }
+        };
+
+        for (let k = 0; k < CONCURRENCY_LIMIT; k++) workers.push(workerTask());
+        await Promise.all(workers);
+
+        return { files: finalProcessed, sizeStr: finalSizeStr, url: targetUrl, name: sourceName, type: sourceType };
+    }
+
+    function launchConfetti() {
+        var duration = 3000; var end = Date.now() + duration;
+        var interval = setInterval(function() {
+            if (Date.now() > end) return clearInterval(interval);
+            confetti({ particleCount: 50, spread: 360, startVelocity: 30, origin: { x: Math.random(), y: Math.random() - 0.2 } });
+        }, 250);
+    }
+    function parseBytesToNum(sizeStr) {
+        if (!sizeStr) return 0;
+        const units = { 'Bytes': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4 };
+        const parts = sizeStr.split(' '); return parseFloat(parts[0]) * (units[parts[1]] || 1);
+    }
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + ['Bytes', 'KB', 'MB', 'GB', 'TB'][i];
+    }
+    async function sendRequest(payload) {
+        const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+        return await response.json();
+    }
+    function setUIState(state) {
+        if (state === 'running') {
+            submitBtn.style.display = 'none'; stopBtn.style.display = 'block'; stopBtn.disabled = false; stopBtn.textContent = "STOP 🛑";
+            folderUrlsInput.disabled = true; bgToggle.disabled = true; progressWrapper.style.display = 'block'; logArea.style.display = 'block';
+        } else {
+            submitBtn.style.display = 'block'; stopBtn.style.display = 'none'; folderUrlsInput.disabled = false; bgToggle.disabled = false;
+        }
+    }
+    function updateProgress(percent, text) {
+        progressBar.style.width = percent + "%";
+        document.getElementById('progressPercent').textContent = percent + "%";
+        document.getElementById('progressText').textContent = text;
+    }
+    function addLog(msg, type) {
+        const div = document.createElement('div'); div.className = 'log-item log-' + type; div.textContent = msg;
+        logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight;
+    }
+    function clearLog() { logArea.innerHTML = ''; }
+    function shortUrl(url) { return url.length > 40 ? url.substring(0, 35) + "..." : url; }
+
+    // --- TIMER FUNCTIONS ---
+    function startTimer() {
+        const startTime = Date.now();
+        timerDisplay.textContent = "00:00:00";
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const elapsedTime = Date.now() - startTime;
+            const hours = Math.floor(elapsedTime / 3600000);
+            const minutes = Math.floor((elapsedTime % 3600000) / 60000);
+            const seconds = Math.floor((elapsedTime % 60000) / 1000);
+            timerDisplay.textContent = 
+                `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+
+    function pad(num) {
+        return num.toString().padStart(2, '0');
+    }
+</script>
+
+</body>
+</html>
