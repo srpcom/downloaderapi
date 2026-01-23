@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G-Drive Cloner (Smart Deduplication)</title>
+    <title>G-Drive Ultimate Cloner</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js"></script>
@@ -44,25 +44,21 @@
         label { display: block; margin-bottom: 0.6rem; color: #d1d8e0; font-size: 0.85rem; font-weight: 500; }
         
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
-        .header-row label { margin-bottom: 0; }
-
         .btn-clear {
             width: auto !important; padding: 4px 10px !important; font-size: 0.75rem !important;
             background: rgba(255, 71, 87, 0.2) !important; border: 1px solid rgba(255, 71, 87, 0.5) !important;
             color: #ff4757 !important; margin: 0 !important; border-radius: 6px !important; 
-            letter-spacing: 0.5px !important; animation: none !important;
         }
         .btn-clear:hover { background: rgba(255, 71, 87, 0.4) !important; color: white !important; }
 
-        textarea {
+        textarea, input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
             width: 100%; padding: 12px 15px; background: var(--input-bg);
             border: 1px solid var(--glass-border); border-radius: 10px;
             font-size: 0.9rem; color: white; box-sizing: border-box;
-            font-family: 'Poppins', sans-serif; resize: vertical; min-height: 120px;
+            font-family: 'Poppins', sans-serif;
         }
-        textarea:focus { outline: none; border-color: var(--primary); background: rgba(255, 255, 255, 0.1); }
+        textarea:focus, input:focus { outline: none; border-color: var(--primary); }
 
-        /* Style Select Option */
         select {
             width: 100%; padding: 12px 15px; background: var(--input-bg);
             border: 1px solid var(--glass-border); border-radius: 10px;
@@ -72,8 +68,20 @@
             background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2300d2ff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
             background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;
         }
-        select:focus { outline: none; border-color: var(--primary); }
         option { background: #1a1a2e; color: white; }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: rgba(0,0,0,0.2); border-radius: 10px; padding: 15px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05); display: none;
+        }
+        .settings-toggle {
+            cursor: pointer; color: #00d2ff; font-size: 0.9rem; text-align: right;
+            margin-bottom: 10px; user-select: none;
+        }
+        .settings-toggle:hover { text-decoration: underline; }
+        .two-col { display: flex; gap: 15px; }
+        .col { flex: 1; }
 
         .toggle-container {
             display: flex; align-items: center; justify-content: space-between;
@@ -82,14 +90,8 @@
         .toggle-label { font-size: 0.9rem; font-weight: 600; color: #00d2ff; }
         .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc; transition: .4s; border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px;
-            background-color: white; transition: .4s; border-radius: 50%;
-        }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #2ed573; } input:checked + .slider:before { transform: translateX(26px); }
 
         .btn-group { display: flex; gap: 10px; }
@@ -133,10 +135,7 @@
         .log-item a { color: inherit; text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.3); }
         .log-item a:hover { color: white; border-bottom: 1px solid white; }
         .log-icon { flex-shrink: 0; width: 15px; text-align: center; }
-        .log-success { color: #00d2ff; } 
-        .log-error { color: #ff4757; } 
-        .log-skip { color: #f4b400; }
-        .log-info { color: #ddd; }
+        .log-success { color: #00d2ff; } .log-error { color: #ff4757; } .log-skip { color: #f4b400; } .log-info { color: #ddd; }
         .log-size { font-size: 0.7em; color: #888; margin-left: auto; padding-left: 10px; }
 
         ::-webkit-scrollbar { width: 6px; }
@@ -153,25 +152,50 @@
 <div id="tsparticles"></div>
 
 <div class="container">
-    <h1>G-Drive Multi Cloner</h1>
-    <p class="subtitle">Smart Deduplication & Merge</p>
+    <h1>G-Drive Ultimate</h1>
+    <p class="subtitle">Smart Filter & Secure Cloning</p>
     
+    <!-- AUTHENTICATION -->
     <div class="form-group">
-        <div class="header-row">
-            <label for="folderUrls">Daftar Link Sumber (File atau Folder)</label>
-            <button id="clearInputBtn" class="btn-clear">Clear</button>
-        </div>
-        <textarea id="folderUrls" placeholder="https://drive.google.com/drive/folders/AAAA...&#10;https://drive.google.com/file/d/BBBB..."></textarea>
+        <label for="accessPin">PIN Akses (Wajib)</label>
+        <input type="password" id="accessPin" placeholder="Masukkan PIN Rahasia Anda" value="12345">
     </div>
 
-    <!-- Pilihan Mode Duplikasi -->
     <div class="form-group">
-        <label for="duplicateMode">Mode Duplikasi (Jika File Sudah Ada):</label>
-        <select id="duplicateMode">
-            <option value="copy">🔵 Copy Biasa (Buat 'Copy of...' baru)</option>
-            <option value="skip">⏩ Lewati (Skip) - Lebih Cepat</option>
-            <option value="replace">🔴 Timpa (Replace) - Hapus Lama</option>
-        </select>
+        <div class="header-row">
+            <label for="folderUrls">Daftar Link Sumber</label>
+            <button id="clearInputBtn" class="btn-clear">Clear</button>
+        </div>
+        <textarea id="folderUrls" placeholder="https://drive.google.com/drive/folders/AAAA..."></textarea>
+    </div>
+
+    <div class="settings-toggle" onclick="toggleSettings()">⚙️ Pengaturan Lanjutan</div>
+    <div class="settings-panel" id="settingsPanel">
+        <div class="form-group">
+            <label for="duplicateMode">Mode Duplikasi:</label>
+            <select id="duplicateMode">
+                <option value="copy">🔵 Copy Biasa</option>
+                <option value="skip">⏩ Skip (Jika file ada)</option>
+                <option value="replace">🔴 Timpa (Replace)</option>
+            </select>
+        </div>
+        
+        <div class="two-col">
+            <div class="col">
+                <label for="maxSize">Max Size (MB)</label>
+                <input type="number" id="maxSize" placeholder="0 = Unlimited" min="0">
+            </div>
+            <div class="col">
+                <label for="ignoredExt">Abaikan Ekstensi</label>
+                <input type="text" id="ignoredExt" placeholder="mp4, mkv, exe">
+            </div>
+        </div>
+        <div style="font-size:0.7em; color:#aaa; margin-top:5px; margin-bottom:15px;">*Pisahkan ekstensi dengan koma.</div>
+
+        <div class="form-group">
+            <label for="emailNotif">Email Notifikasi (Saat Selesai)</label>
+            <input type="email" id="emailNotif" placeholder="email.anda@gmail.com">
+        </div>
     </div>
 
     <div class="toggle-container">
@@ -180,9 +204,6 @@
             <input type="checkbox" id="bgToggle">
             <span class="slider"></span>
         </label>
-    </div>
-    <div style="font-size: 0.75rem; color: #aaa; margin-top: -10px; margin-bottom: 15px; text-align: right;">
-        *Jika ON: Proses berjalan meski tab ditutup.
     </div>
 
     <div class="btn-group">
@@ -208,26 +229,38 @@
     // --- GANTI URL INI DENGAN URL WEB APP ANDA ---
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVMco1a7VA7GkY6OyxFm239RXZlqMsTUy9kheMJthucelNETE9Zu9B9jqMB9mgyWbr/exec"; 
     
-    // --- TURBO MODE: 5 WORKERS ---
     const CONCURRENCY_LIMIT = 5; 
 
+    // UI References
     const submitBtn = document.getElementById('submitBtn');
     const stopBtn = document.getElementById('stopBtn');
     const bgToggle = document.getElementById('bgToggle');
     const folderUrlsInput = document.getElementById('folderUrls');
     const clearInputBtn = document.getElementById('clearInputBtn');
-    const duplicateModeInput = document.getElementById('duplicateMode');
+    const accessPinInput = document.getElementById('accessPin');
+    const settingsPanel = document.getElementById('settingsPanel');
     const progressWrapper = document.getElementById('progressWrapper');
     const progressBar = document.getElementById('progressBar');
     const logArea = document.getElementById('logArea');
     const globalStatus = document.getElementById('globalStatus');
     const timerDisplay = document.getElementById('timerDisplay');
+    
+    // Setting Inputs
+    const duplicateModeInput = document.getElementById('duplicateMode');
+    const maxSizeInput = document.getElementById('maxSize');
+    const ignoredExtInput = document.getElementById('ignoredExt');
+    const emailNotifInput = document.getElementById('emailNotif');
 
     let isStopRequested = false;
     let timerInterval;
 
+    function toggleSettings() {
+        settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+    }
+
     clearInputBtn.addEventListener('click', () => { folderUrlsInput.value = ''; folderUrlsInput.focus(); });
 
+    // Particles (Visual)
     if (typeof tsParticles !== 'undefined') {
         tsParticles.load("tsparticles", {
             fpsLimit: 60,
@@ -238,23 +271,18 @@
                 opacity: { value: 0.4, random: true }, size: { value: { min: 10, max: 20 }, random: true },
                 move: { enable: true, speed: 1, direction: "none", random: true, outModes: { default: "out" } }
             },
-            emitters: {
-                rate: { delay: 3, quantity: 1 }, position: { x: 50, y: 50 },
-                particles: {
-                    shape: { type: "char", character: { value: ["✉️", "📦"], font: "Verdana" } },
-                    size: { value: { min: 60, max: 90 } }, opacity: { value: 1 },
-                    move: { enable: true, speed: 1, outModes: { default: "destroy" } },
-                    links: { enable: false }
-                }
-            }
+            emitters: { rate: { delay: 3, quantity: 1 }, position: { x: 50, y: 50 }, particles: { shape: { type: "char", character: { value: ["✉️", "📦"], font: "Verdana" } }, size: { value: { min: 60, max: 90 } }, opacity: { value: 1 }, move: { enable: true, speed: 1, outModes: { default: "destroy" } } } }
         });
     }
 
+    // --- MAIN LOGIC ---
+
     stopBtn.addEventListener('click', async () => {
         isStopRequested = true; stopBtn.disabled = true; stopBtn.textContent = "Stopping...";
+        const pin = accessPinInput.value;
         if (bgToggle.checked) {
             addLog("Mengirim sinyal stop ke server...", "info");
-            try { const res = await sendRequest({ action: 'stop_background' }); addLog(res.message, "success"); } catch (e) { addLog("Gagal stop: " + e.message, "error"); }
+            try { const res = await sendRequest({ action: 'stop_background', pin: pin }); addLog(res.message, "success"); } catch (e) { addLog("Gagal stop: " + e.message, "error"); }
         } else addLog("Menghentikan proses browser...", "info");
         stopTimer();
     });
@@ -262,35 +290,52 @@
     submitBtn.addEventListener('click', async () => {
         const rawText = folderUrlsInput.value;
         const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
-        const mode = duplicateModeInput.value;
-
+        const pin = accessPinInput.value;
+        
+        if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
+
+        // Gather Config
+        const config = {
+            mode: duplicateModeInput.value,
+            filters: {
+                maxSizeMB: parseInt(maxSizeInput.value) || 0,
+                ignoredExt: ignoredExtInput.value
+            },
+            email: emailNotifInput.value
+        };
 
         isStopRequested = false; setUIState('running'); clearLog(); startTimer();
         
-        // Log info mode
-        let modeText = "Copy Biasa";
-        if (mode === 'skip') modeText = "Skip (Lewati)";
-        if (mode === 'replace') modeText = "Replace (Timpa)";
-        addLog(`🛠️ Mode: ${modeText}`, 'info');
+        addLog(`🔐 PIN: OK | Mode: ${config.mode.toUpperCase()}`, 'info');
+        if(config.filters.maxSizeMB) addLog(`⚠️ Limit Size: ${config.filters.maxSizeMB} MB`, 'info');
+        if(config.filters.ignoredExt) addLog(`🚫 Ignored: ${config.filters.ignoredExt}`, 'info');
 
         if (bgToggle.checked) {
             try {
-                addLog("Mengirim data ke server...", "info");
-                // Kirim juga parameter 'mode' ke server
-                const res = await sendRequest({ action: 'start_background_multi', urls: urls, mode: mode });
+                addLog("Mengirim job ke server...", "info");
+                const res = await sendRequest({ 
+                    action: 'start_background_multi', 
+                    urls: urls, 
+                    pin: pin,
+                    ...config 
+                });
+                
                 if (res.status === 'success') {
                     addLog("✅ " + res.message, "success"); globalStatus.textContent = "BERJALAN DI SERVER"; 
                     if (typeof launchConfetti === 'function') launchConfetti();
-                    Swal.fire({ icon: 'success', title: 'Started!', text: 'Proses berjalan di background. Anda boleh menutup tab ini.', confirmButtonText: 'Oke' });
-                } else { addLog("❌ Gagal: " + res.message, "error"); setUIState('stopped'); stopTimer(); }
+                    Swal.fire({ icon: 'success', title: 'Started!', text: 'Proses berjalan di background. Email akan dikirim saat selesai.', confirmButtonText: 'Oke' });
+                } else { 
+                    addLog("❌ Gagal: " + res.message, "error"); setUIState('stopped'); stopTimer(); 
+                    if(res.message.includes("PIN")) Swal.fire({ icon: 'error', title: 'Akses Ditolak', text: 'PIN Salah!' });
+                }
             } catch (e) { addLog("❌ Error: " + e.message, "error"); setUIState('stopped'); stopTimer(); }
         } else {
-            await runForegroundQueue(urls, mode);
+            await runForegroundQueue(urls, pin, config);
         }
     });
 
-    async function runForegroundQueue(urls, mode) {
+    async function runForegroundQueue(urls, pin, config) {
         let successCount = 0; let failCount = 0; let grandTotalFiles = 0; let grandTotalBytes = 0; let resultLinks = [];
 
         for (let i = 0; i < urls.length; i++) {
@@ -300,8 +345,8 @@
             updateProgress(0, "Inisialisasi...");
 
             try {
-                addLog(`▶ [${i+1}/${urls.length}] Connecting: ${shortUrl(currentUrl)}`, 'info');
-                const result = await processSingleFolder(currentUrl, mode);
+                addLog(`▶ [${i+1}/${urls.length}] Connecting...`, 'info');
+                const result = await processSingleFolder(currentUrl, pin, config);
                 
                 const itemType = result.type === 'file' ? 'File' : 'Folder';
                 
@@ -310,14 +355,15 @@
                      addLog(`✅ Selesai: ${itemType} "${result.name}" (${result.files} processed).`, 'success');
                      if (result.url) resultLinks.push({ name: `${itemType}: ${result.name}`, url: result.url });
                 } else {
-                     addLog(`⚠️ Selesai dengan peringatan: ${result.name} (0 file disalin).`, 'info');
+                     addLog(`⚠️ Selesai: ${result.name} (0 file disalin/kena filter).`, 'info');
                 }
                 
                 grandTotalFiles += result.files; 
                 grandTotalBytes += parseBytesToNum(result.sizeStr);
 
             } catch (error) {
-                failCount++; addLog(`❌ Gagal Total: ${error.message}`, 'error');
+                failCount++; addLog(`❌ Gagal: ${error.message}`, 'error');
+                if(error.message.includes("PIN")) { setUIState('stopped'); stopTimer(); return; }
             }
         }
 
@@ -332,10 +378,10 @@
         }
     }
 
-    async function processSingleFolder(url, mode) {
+    async function processSingleFolder(url, pin, config) {
         if (isStopRequested) return { files: 0, sizeStr: "0 B", url: null, type: 'unknown' };
         
-        const initRes = await sendRequest({ action: 'initialize', url: url, name: "", mode: mode });
+        const initRes = await sendRequest({ action: 'initialize', url: url, name: "", pin: pin, ...config });
         if (initRes.status !== 'success') throw new Error(initRes.message);
 
         const jobId = initRes.jobId; const total = initRes.totalFiles;
@@ -353,24 +399,23 @@
         const workerTask = async () => {
             while (!isFinished && !isStopRequested) {
                 try {
-                    const res = await sendRequest({ action: 'process_batch', jobId: jobId });
+                    const res = await sendRequest({ action: 'process_batch', jobId: jobId, pin: pin });
                     if (res.status !== 'success') throw new Error(res.message);
                     
                     const p = res.progress;
                     updateProgress(p.percent, `${actionText}: ${p.processed}/${p.total}`);
                     finalProcessed = p.processed; finalSizeStr = p.currentSize;
 
-                    // Detail Log
                     if (res.processedList && res.processedList.length > 0) {
                         res.processedList.forEach(item => {
-                            if (item.status === 'success') {
-                                if (sourceType === 'file') targetUrl = item.url;
-                                addLogHTML(item.name, item.url, item.size, 'success');
-                            } else if (item.status === 'skipped') {
-                                addLogHTML(item.name, "#", item.size, 'skip');
-                            } else {
-                                addLogHTML(item.name, "#", "-", 'error');
-                            }
+                            let type = 'success';
+                            if(item.status === 'skipped') type = 'skip';
+                            if(item.status === 'error') type = 'error';
+                            
+                            // Only update target URL if success
+                            if (item.status === 'success' && sourceType === 'file') targetUrl = item.url;
+                            
+                            addLogHTML(item.name, item.url, item.size, type);
                         });
                     }
 
@@ -413,84 +458,29 @@
         });
     }
 
-    // --- HELPER FUNCTIONS ---
-    function launchConfetti() {
-        if (typeof confetti === 'undefined') return;
-        var duration = 3000; var end = Date.now() + duration;
-        var interval = setInterval(function() {
-            if (Date.now() > end) return clearInterval(interval);
-            confetti({ particleCount: 50, spread: 360, startVelocity: 30, origin: { x: Math.random(), y: Math.random() - 0.2 } });
-        }, 250);
-    }
-    function parseBytesToNum(sizeStr) {
-        if (!sizeStr) return 0;
-        const units = { 'Bytes': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4 };
-        const parts = sizeStr.split(' '); return parseFloat(parts[0]) * (units[parts[1]] || 1);
-    }
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const i = Math.floor(Math.log(bytes) / Math.log(1024));
-        return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + ['Bytes', 'KB', 'MB', 'GB', 'TB'][i];
-    }
-    async function sendRequest(payload) {
-        const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
-        return await response.json();
-    }
+    // --- UTILS ---
+    function launchConfetti() { if (typeof confetti !== 'undefined') { var d = 3000; var e = Date.now() + d; var i = setInterval(function() { if (Date.now() > e) return clearInterval(i); confetti({ particleCount: 50, spread: 360, startVelocity: 30, origin: { x: Math.random(), y: Math.random() - 0.2 } }); }, 250); } }
+    function parseBytesToNum(sizeStr) { if (!sizeStr) return 0; const units = { 'Bytes': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4 }; const parts = sizeStr.split(' '); return parseFloat(parts[0]) * (units[parts[1]] || 1); }
+    function formatBytes(bytes) { if (bytes === 0) return '0 Bytes'; const i = Math.floor(Math.log(bytes) / Math.log(1024)); return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + ['Bytes', 'KB', 'MB', 'GB', 'TB'][i]; }
+    async function sendRequest(payload) { const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); return await response.json(); }
     function setUIState(state) {
         if (state === 'running') {
             submitBtn.style.display = 'none'; stopBtn.style.display = 'block'; stopBtn.disabled = false; stopBtn.textContent = "STOP 🛑";
-            folderUrlsInput.disabled = true; bgToggle.disabled = true; duplicateModeInput.disabled = true;
+            folderUrlsInput.disabled = true; bgToggle.disabled = true; accessPinInput.disabled = true;
             progressWrapper.style.display = 'block'; logArea.style.display = 'block';
         } else {
-            submitBtn.style.display = 'block'; stopBtn.style.display = 'none'; folderUrlsInput.disabled = false; bgToggle.disabled = false; duplicateModeInput.disabled = false;
+            submitBtn.style.display = 'block'; stopBtn.style.display = 'none'; folderUrlsInput.disabled = false; bgToggle.disabled = false; accessPinInput.disabled = false;
         }
     }
-    function updateProgress(percent, text) {
-        progressBar.style.width = percent + "%";
-        document.getElementById('progressPercent').textContent = percent + "%";
-        document.getElementById('progressText').textContent = text;
-    }
-    
-    function addLog(msg, type) {
-        const div = document.createElement('div'); div.className = 'log-item log-' + type; 
-        div.innerHTML = `<span class="log-icon">${getIcon(type)}</span> <span>${msg}</span>`;
-        logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight;
-    }
-
-    function addLogHTML(name, url, size, type) {
-        const div = document.createElement('div'); div.className = 'log-item log-' + type;
-        const icon = getIcon(type);
-        const content = url && url !== '#' ? `<a href="${url}" target="_blank">${name}</a>` : name;
-        
-        div.innerHTML = `<span class="log-icon">${icon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${content}</span> <span class="log-size">${size}</span>`;
-        logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight;
-    }
-
-    function getIcon(type) {
-        if(type === 'success') return '✅';
-        if(type === 'error') return '❌';
-        if(type === 'skip') return '⏩';
-        if(type === 'info') return 'ℹ️';
-        return '•';
-    }
-
+    function updateProgress(percent, text) { progressBar.style.width = percent + "%"; document.getElementById('progressPercent').textContent = percent + "%"; document.getElementById('progressText').textContent = text; }
+    function addLog(msg, type) { const div = document.createElement('div'); div.className = 'log-item log-' + type; div.innerHTML = `<span class="log-icon">${getIcon(type)}</span> <span>${msg}</span>`; logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight; }
+    function addLogHTML(name, url, size, type) { const div = document.createElement('div'); div.className = 'log-item log-' + type; const icon = getIcon(type); const content = url && url !== '#' ? `<a href="${url}" target="_blank">${name}</a>` : name; div.innerHTML = `<span class="log-icon">${icon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${content}</span> <span class="log-size">${size}</span>`; logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight; }
+    function getIcon(type) { if(type === 'success') return '✅'; if(type === 'error') return '❌'; if(type === 'skip') return '⏩'; if(type === 'info') return 'ℹ️'; return '•'; }
     function clearLog() { logArea.innerHTML = ''; }
     function shortUrl(url) { return url.length > 40 ? url.substring(0, 35) + "..." : url; }
-
-    function startTimer() {
-        const startTime = Date.now();
-        timerDisplay.textContent = "00:00:00";
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            const elapsedTime = Date.now() - startTime;
-            const hours = Math.floor(elapsedTime / 3600000);
-            const minutes = Math.floor((elapsedTime % 3600000) / 60000);
-            const seconds = Math.floor((elapsedTime % 60000) / 1000);
-            timerDisplay.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-        }, 1000);
-    }
+    function startTimer() { const s = Date.now(); timerDisplay.textContent = "00:00:00"; clearInterval(timerInterval); timerInterval = setInterval(() => { const e = Date.now() - s; const h = Math.floor(e / 3600000); const m = Math.floor((e % 3600000) / 60000); const sec = Math.floor((e % 60000) / 1000); timerDisplay.textContent = `${pad(h)}:${pad(m)}:${pad(sec)}`; }, 1000); }
     function stopTimer() { clearInterval(timerInterval); }
-    function pad(num) { return num.toString().padStart(2, '0'); }
+    function pad(n) { return n.toString().padStart(2, '0'); }
 </script>
 
 </body>
