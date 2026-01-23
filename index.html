@@ -163,6 +163,8 @@
         }
         .result-title { color: #00d2ff; font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; }
         .result-info { font-size: 0.85rem; color: #ccc; }
+        
+        .hidden-input { display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -203,18 +205,24 @@
     <div class="settings-panel" id="settingsPanel">
         <div class="form-group">
             <label for="duplicateMode">Metode Duplikasi:</label>
-            <select id="duplicateMode">
+            <select id="duplicateMode" onchange="toggleRenameInput()">
                 <optgroup label="🔵 Mode Copy (File Sumber Tetap Aman)">
                     <option value="copy_duplicate">Copy & Duplikat (Default)</option>
                     <option value="copy_skip">Copy & Skip (Jika file ada, lewati)</option>
                     <option value="copy_replace">Copy & Replace (Timpa file lama)</option>
                 </optgroup>
-                <optgroup label="🚀 Mode Move (File Sumber Dihapus)">
-                    <option value="move_duplicate">Move & Duplikat</option>
-                    <option value="move_skip">Move & Skip (Jika file ada, BATALKAN move)</option>
-                    <option value="move_replace">Move & Replace (Timpa file lama)</option>
+                <optgroup label="✏️ Mode Rename (Ganti Nama Sumber)">
+                    <option value="rename_duplicate">Copy & Rename Sumber</option>
+                    <option value="rename_skip">Copy & Rename (Skip jika target ada)</option>
+                    <option value="rename_replace">Copy & Rename (Replace jika target ada)</option>
                 </optgroup>
             </select>
+            
+            <!-- INPUT UNTUK CUSTOM RENAME -->
+            <div id="renameInputContainer" class="hidden-input">
+                <input type="text" id="renamePrefix" placeholder="Tulis Prefix Baru (Default: [MOVED])">
+                <div style="font-size:0.7em; color:#aaa; margin-top:2px;">*Nama file sumber akan menjadi: <b>Prefix + NamaAsli</b></div>
+            </div>
         </div>
         
         <div class="two-col">
@@ -276,7 +284,7 @@
     const bgToggle = document.getElementById('bgToggle');
     const folderUrlsInput = document.getElementById('folderUrls');
     const destUrlInput = document.getElementById('destUrl');
-    const newFolderNameInput = document.getElementById('newFolderName'); // New Input
+    const newFolderNameInput = document.getElementById('newFolderName'); 
     const clearInputBtn = document.getElementById('clearInputBtn');
     const accessPinInput = document.getElementById('accessPin');
     const settingsPanel = document.getElementById('settingsPanel');
@@ -288,6 +296,8 @@
     
     // Setting Inputs
     const duplicateModeInput = document.getElementById('duplicateMode');
+    const renameInputContainer = document.getElementById('renameInputContainer');
+    const renamePrefixInput = document.getElementById('renamePrefix');
     const maxSizeInput = document.getElementById('maxSize');
     const ignoredExtInput = document.getElementById('ignoredExt');
     const emailNotifInput = document.getElementById('emailNotif');
@@ -298,6 +308,15 @@
 
     function toggleSettings() {
         settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+    }
+    
+    function toggleRenameInput() {
+        const mode = duplicateModeInput.value;
+        if (mode.startsWith('rename_')) {
+            renameInputContainer.style.display = 'block';
+        } else {
+            renameInputContainer.style.display = 'none';
+        }
     }
 
     clearInputBtn.addEventListener('click', () => { folderUrlsInput.value = ''; folderUrlsInput.focus(); });
@@ -385,8 +404,14 @@
         const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
         const pin = accessPinInput.value;
         const destUrl = destUrlInput.value.trim();
-        const newFolderName = newFolderNameInput.value.trim(); // Capture New Folder Name
+        const newFolderName = newFolderNameInput.value.trim();
         
+        // Capture Custom Rename
+        let renamePrefix = renamePrefixInput.value.trim();
+        if (renamePrefix === "") renamePrefix = "[MOVED] "; // Default value if empty
+        // Ensure there is a space at the end if user didn't put one (optional but nice)
+        if (!renamePrefix.endsWith(" ") && !renamePrefix.endsWith("_") && !renamePrefix.endsWith("-")) renamePrefix += " ";
+
         if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
 
@@ -394,7 +419,8 @@
         const config = {
             mode: duplicateModeInput.value,
             destUrl: destUrl,
-            newFolderName: newFolderName, // Send to backend
+            newFolderName: newFolderName,
+            renamePrefix: renamePrefix, // Send prefix to backend
             filters: {
                 maxSizeMB: parseInt(maxSizeInput.value) || 0,
                 ignoredExt: ignoredExtInput.value
@@ -402,10 +428,10 @@
             email: emailNotifInput.value
         };
 
-        if (config.mode.startsWith('move_')) {
+        if (config.mode.startsWith('rename_')) {
             const confirmMove = await Swal.fire({
-                title: 'Konfirmasi Move?',
-                text: "Mode 'Move' akan MENGHAPUS file di folder asal setelah sukses dicopy. Periksa kembali pilihan Anda!",
+                title: 'Konfirmasi Rename?',
+                text: `File sumber akan diganti namanya dengan awalan "${renamePrefix}". Pastikan Anda punya akses Editor!`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -426,6 +452,7 @@
         else addLog(`📂 Tujuan: Default Folder`, 'info');
         
         if (newFolderName) addLog(`📁 Sub-folder Baru: "${newFolderName}"`, 'info');
+        if (config.mode.startsWith('rename_')) addLog(`✏️ Rename Prefix: "${renamePrefix}"`, 'info');
 
         if (bgToggle.checked) {
             try {
@@ -498,7 +525,7 @@
                     email: config.email || "", 
                     urls: urls,
                     stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) },
-                    details: currentSessionLogs // Send detail logs
+                    details: currentSessionLogs 
                 });
                 
                 if (reportRes.emailStatus === 'sent') {
