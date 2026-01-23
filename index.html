@@ -112,6 +112,8 @@
         @keyframes gradientAnim { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
         button:disabled { background: #444; color: #aaa; cursor: not-allowed; animation: none; transform: none; box-shadow: none;}
+        .sheet-btn { background: #109869 !important; color: white !important; margin-top: 10px; display: block; width: 100%; text-decoration: none; text-align: center; padding: 10px; border-radius: 5px; font-weight: bold; }
+        .sheet-btn:hover { background: #0c7a54 !important; }
 
         .progress-wrapper { margin-top: 20px; display: none; }
         .global-status { 
@@ -285,7 +287,6 @@
 
     let isStopRequested = false;
     let timerInterval;
-    // Store detailed logs for the report
     let currentSessionLogs = [];
 
     function toggleSettings() {
@@ -328,13 +329,17 @@
                 const res = await sendRequest({ action: 'check_stats', url: urls[i], pin: pin });
                 
                 if (res.status === 'success') {
+                    // Cek Permission Read Only
+                    const accessColor = res.canEdit ? '#2ed573' : '#ff4757'; // Green if Edit, Red if ReadOnly
+                    const accessWeight = res.canEdit ? 'normal' : 'bold';
+
                     resultsHTML += `
                         <div class="result-box">
                             <div class="result-title">${i+1}. ${res.name} (${res.type === 'folder' ? '📁 Folder' : '📄 File'})</div>
                             <div class="result-info">
                                 📄 File: ${res.stats.files} | 
                                 💾 Size: <span style="color:#2ed573">${res.stats.size}</span><br>
-                                🔒 Akses: <span style="color:#f4b400">${res.access}</span>
+                                🔒 Akses: <span style="color:${accessColor}; font-weight:${accessWeight}">${res.access}</span>
                             </div>
                         </div>
                     `;
@@ -489,10 +494,11 @@
                     addLog("✅ Log tersimpan.", "success");
                 }
 
-            } catch(e) { console.error("Gagal lapor: ", e); }
+                if (typeof launchConfetti === 'function') launchConfetti();
+                // Pass sheetUrl to showFinalReport
+                showFinalReport(successCount, failCount, grandTotalFiles, grandTotalBytes, resultLinks, reportRes.sheetUrl);
 
-            if (typeof launchConfetti === 'function') launchConfetti();
-            showFinalReport(successCount, failCount, grandTotalFiles, grandTotalBytes, resultLinks);
+            } catch(e) { console.error("Gagal lapor: ", e); }
         }
     }
 
@@ -559,7 +565,7 @@
         return { files: finalProcessed, sizeStr: finalSizeStr, url: targetUrl, name: sourceName, type: sourceType };
     }
 
-    function showFinalReport(success, fail, totalFiles, totalBytes, links) {
+    function showFinalReport(success, fail, totalFiles, totalBytes, links, sheetUrl) {
         let linksHtml = "";
         if (links.length > 0) {
             linksHtml += `<div class="result-btn-container" style="margin-top:15px; border-top:1px solid #333; padding-top:10px;">`;
@@ -568,6 +574,11 @@
                 linksHtml += `<a href="${link.url}" target="_blank" class="result-link-btn">${link.name}</a>`;
             });
             linksHtml += `</div>`;
+        }
+
+        let sheetBtnHtml = "";
+        if (sheetUrl) {
+            sheetBtnHtml = `<a href="${sheetUrl}" target="_blank" class="sheet-btn">📂 Buka Log Sheet</a>`;
         }
 
         Swal.fire({
@@ -580,6 +591,7 @@
                     <tr><td>Durasi</td><td>${timerDisplay.textContent}</td></tr>
                 </table>
                 ${linksHtml}
+                ${sheetBtnHtml}
             `,
             background: '#111116', color: '#fff', 
             confirmButtonText: 'Tutup', confirmButtonColor: '#ff00de',
