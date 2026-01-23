@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G-Drive Cloner (Detailed Log)</title>
+    <title>G-Drive Cloner (Smart Deduplication)</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js"></script>
@@ -12,8 +12,8 @@
     <style>
         :root {
             --primary: #00d2ff; --secondary: #ff00de;
-            --glass-bg: rgba(20, 20, 30, 0.7); --glass-border: rgba(255, 255, 255, 0.1);
-            --text-color: #ffffff; --input-bg: rgba(0, 0, 0, 0.4);
+            --glass-bg: rgba(20, 20, 30, 0.75); --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff; --input-bg: rgba(0, 0, 0, 0.5);
         }
         body {
             font-family: 'Poppins', sans-serif;
@@ -61,6 +61,19 @@
             font-family: 'Poppins', sans-serif; resize: vertical; min-height: 120px;
         }
         textarea:focus { outline: none; border-color: var(--primary); background: rgba(255, 255, 255, 0.1); }
+
+        /* Style Select Option */
+        select {
+            width: 100%; padding: 12px 15px; background: var(--input-bg);
+            border: 1px solid var(--glass-border); border-radius: 10px;
+            font-size: 0.9rem; color: white; box-sizing: border-box;
+            font-family: 'Poppins', sans-serif; cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2300d2ff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;
+        }
+        select:focus { outline: none; border-color: var(--primary); }
+        option { background: #1a1a2e; color: white; }
 
         .toggle-container {
             display: flex; align-items: center; justify-content: space-between;
@@ -112,7 +125,6 @@
             font-size: 0.8rem; font-family: 'Consolas', monospace; display: none;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        /* Style Log yang Lebih Rapi */
         .log-item { 
             padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); 
             display: flex; justify-content: flex-start; align-items: center; gap: 8px;
@@ -123,6 +135,7 @@
         .log-icon { flex-shrink: 0; width: 15px; text-align: center; }
         .log-success { color: #00d2ff; } 
         .log-error { color: #ff4757; } 
+        .log-skip { color: #f4b400; }
         .log-info { color: #ddd; }
         .log-size { font-size: 0.7em; color: #888; margin-left: auto; padding-left: 10px; }
 
@@ -130,7 +143,6 @@
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
         
-        /* Custom Table for Alert */
         .swal-table { width: 100%; font-size: 0.9em; margin-top: 10px; border-collapse: collapse; }
         .swal-table td { padding: 5px; border-bottom: 1px solid #333; color: #ddd; text-align: left; }
         .swal-table td:last-child { text-align: right; font-weight: bold; color: #fff; }
@@ -142,7 +154,7 @@
 
 <div class="container">
     <h1>G-Drive Multi Cloner</h1>
-    <p class="subtitle">Bulk Folder & File Transfer</p>
+    <p class="subtitle">Smart Deduplication & Merge</p>
     
     <div class="form-group">
         <div class="header-row">
@@ -150,6 +162,16 @@
             <button id="clearInputBtn" class="btn-clear">Clear</button>
         </div>
         <textarea id="folderUrls" placeholder="https://drive.google.com/drive/folders/AAAA...&#10;https://drive.google.com/file/d/BBBB..."></textarea>
+    </div>
+
+    <!-- Pilihan Mode Duplikasi -->
+    <div class="form-group">
+        <label for="duplicateMode">Mode Duplikasi (Jika File Sudah Ada):</label>
+        <select id="duplicateMode">
+            <option value="copy">🔵 Copy Biasa (Buat 'Copy of...' baru)</option>
+            <option value="skip">⏩ Lewati (Skip) - Lebih Cepat</option>
+            <option value="replace">🔴 Timpa (Replace) - Hapus Lama</option>
+        </select>
     </div>
 
     <div class="toggle-container">
@@ -194,6 +216,7 @@
     const bgToggle = document.getElementById('bgToggle');
     const folderUrlsInput = document.getElementById('folderUrls');
     const clearInputBtn = document.getElementById('clearInputBtn');
+    const duplicateModeInput = document.getElementById('duplicateMode');
     const progressWrapper = document.getElementById('progressWrapper');
     const progressBar = document.getElementById('progressBar');
     const logArea = document.getElementById('logArea');
@@ -239,14 +262,23 @@
     submitBtn.addEventListener('click', async () => {
         const rawText = folderUrlsInput.value;
         const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+        const mode = duplicateModeInput.value;
+
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
 
         isStopRequested = false; setUIState('running'); clearLog(); startTimer();
+        
+        // Log info mode
+        let modeText = "Copy Biasa";
+        if (mode === 'skip') modeText = "Skip (Lewati)";
+        if (mode === 'replace') modeText = "Replace (Timpa)";
+        addLog(`🛠️ Mode: ${modeText}`, 'info');
 
         if (bgToggle.checked) {
             try {
                 addLog("Mengirim data ke server...", "info");
-                const res = await sendRequest({ action: 'start_background_multi', urls: urls });
+                // Kirim juga parameter 'mode' ke server
+                const res = await sendRequest({ action: 'start_background_multi', urls: urls, mode: mode });
                 if (res.status === 'success') {
                     addLog("✅ " + res.message, "success"); globalStatus.textContent = "BERJALAN DI SERVER"; 
                     if (typeof launchConfetti === 'function') launchConfetti();
@@ -254,11 +286,11 @@
                 } else { addLog("❌ Gagal: " + res.message, "error"); setUIState('stopped'); stopTimer(); }
             } catch (e) { addLog("❌ Error: " + e.message, "error"); setUIState('stopped'); stopTimer(); }
         } else {
-            await runForegroundQueue(urls);
+            await runForegroundQueue(urls, mode);
         }
     });
 
-    async function runForegroundQueue(urls) {
+    async function runForegroundQueue(urls, mode) {
         let successCount = 0; let failCount = 0; let grandTotalFiles = 0; let grandTotalBytes = 0; let resultLinks = [];
 
         for (let i = 0; i < urls.length; i++) {
@@ -269,20 +301,15 @@
 
             try {
                 addLog(`▶ [${i+1}/${urls.length}] Connecting: ${shortUrl(currentUrl)}`, 'info');
-                const result = await processSingleFolder(currentUrl);
+                const result = await processSingleFolder(currentUrl, mode);
                 
-                // Tambahkan log khusus untuk folder/file induk
                 const itemType = result.type === 'file' ? 'File' : 'Folder';
-                
-                // Cek apakah ada file yang gagal di dalam folder ini
-                // result.processedFiles adalah yang sukses
                 
                 if (result.files > 0 || result.type === 'file') {
                      successCount++;
-                     addLog(`✅ Selesai: ${itemType} "${result.name}" (${result.files} items).`, 'success');
+                     addLog(`✅ Selesai: ${itemType} "${result.name}" (${result.files} processed).`, 'success');
                      if (result.url) resultLinks.push({ name: `${itemType}: ${result.name}`, url: result.url });
                 } else {
-                     // Jika folder kosong atau gagal total
                      addLog(`⚠️ Selesai dengan peringatan: ${result.name} (0 file disalin).`, 'info');
                 }
                 
@@ -301,15 +328,14 @@
         } else {
             globalStatus.textContent = "SELESAI"; 
             if (typeof launchConfetti === 'function') launchConfetti();
-            
             showFinalReport(successCount, failCount, grandTotalFiles, grandTotalBytes, resultLinks);
         }
     }
 
-    async function processSingleFolder(url) {
+    async function processSingleFolder(url, mode) {
         if (isStopRequested) return { files: 0, sizeStr: "0 B", url: null, type: 'unknown' };
         
-        const initRes = await sendRequest({ action: 'initialize', url: url, name: "" });
+        const initRes = await sendRequest({ action: 'initialize', url: url, name: "", mode: mode });
         if (initRes.status !== 'success') throw new Error(initRes.message);
 
         const jobId = initRes.jobId; const total = initRes.totalFiles;
@@ -334,14 +360,14 @@
                     updateProgress(p.percent, `${actionText}: ${p.processed}/${p.total}`);
                     finalProcessed = p.processed; finalSizeStr = p.currentSize;
 
-                    // --- DETAIL LOG PROCESSING ---
-                    // Menampilkan detail setiap file yang berhasil di-copy
+                    // Detail Log
                     if (res.processedList && res.processedList.length > 0) {
                         res.processedList.forEach(item => {
                             if (item.status === 'success') {
-                                // Update targetUrl jika ini adalah single file copy
                                 if (sourceType === 'file') targetUrl = item.url;
                                 addLogHTML(item.name, item.url, item.size, 'success');
+                            } else if (item.status === 'skipped') {
+                                addLogHTML(item.name, "#", item.size, 'skip');
                             } else {
                                 addLogHTML(item.name, "#", "-", 'error');
                             }
@@ -374,10 +400,8 @@
             title: '🎉 Selesai 🎉',
             html: `
                 <table class="swal-table">
-                    <tr><td>Total Link Sumber</td><td>${success + fail}</td></tr>
-                    <tr><td>Link Berhasil</td><td style="color:#00d2ff">${success}</td></tr>
-                    <tr><td>Link Gagal</td><td style="color:#ff4757">${fail}</td></tr>
-                    <tr><td>Total Item File</td><td>${totalFiles}</td></tr>
+                    <tr><td>Link Sumber</td><td>${success + fail}</td></tr>
+                    <tr><td>Total Item</td><td>${totalFiles}</td></tr>
                     <tr><td>Total Ukuran</td><td>${formatBytes(totalBytes)}</td></tr>
                     <tr><td>Durasi</td><td>${timerDisplay.textContent}</td></tr>
                 </table>
@@ -415,9 +439,10 @@
     function setUIState(state) {
         if (state === 'running') {
             submitBtn.style.display = 'none'; stopBtn.style.display = 'block'; stopBtn.disabled = false; stopBtn.textContent = "STOP 🛑";
-            folderUrlsInput.disabled = true; bgToggle.disabled = true; progressWrapper.style.display = 'block'; logArea.style.display = 'block';
+            folderUrlsInput.disabled = true; bgToggle.disabled = true; duplicateModeInput.disabled = true;
+            progressWrapper.style.display = 'block'; logArea.style.display = 'block';
         } else {
-            submitBtn.style.display = 'block'; stopBtn.style.display = 'none'; folderUrlsInput.disabled = false; bgToggle.disabled = false;
+            submitBtn.style.display = 'block'; stopBtn.style.display = 'none'; folderUrlsInput.disabled = false; bgToggle.disabled = false; duplicateModeInput.disabled = false;
         }
     }
     function updateProgress(percent, text) {
@@ -426,17 +451,15 @@
         document.getElementById('progressText').textContent = text;
     }
     
-    // Log standar (System message)
     function addLog(msg, type) {
         const div = document.createElement('div'); div.className = 'log-item log-' + type; 
         div.innerHTML = `<span class="log-icon">${getIcon(type)}</span> <span>${msg}</span>`;
         logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight;
     }
 
-    // Log detail file (Bisa diklik)
     function addLogHTML(name, url, size, type) {
         const div = document.createElement('div'); div.className = 'log-item log-' + type;
-        const icon = type === 'success' ? '📄' : '❌';
+        const icon = getIcon(type);
         const content = url && url !== '#' ? `<a href="${url}" target="_blank">${name}</a>` : name;
         
         div.innerHTML = `<span class="log-icon">${icon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${content}</span> <span class="log-size">${size}</span>`;
@@ -446,6 +469,7 @@
     function getIcon(type) {
         if(type === 'success') return '✅';
         if(type === 'error') return '❌';
+        if(type === 'skip') return '⏩';
         if(type === 'info') return 'ℹ️';
         return '•';
     }
