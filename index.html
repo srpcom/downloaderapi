@@ -104,6 +104,9 @@
             background: linear-gradient(45deg, #00d2ff, #3a7bd5, #ff00de);
             background-size: 200% 200%; animation: gradientAnim 3s ease infinite;
         }
+        #checkBtn {
+            background: #6c5ce7;
+        }
         #stopBtn { background: #ff4757; display: none; }
         @keyframes gradientAnim { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
@@ -161,6 +164,12 @@
         <input type="password" id="accessPin" placeholder="Masukkan PIN Rahasia Anda" value="12345">
     </div>
 
+    <!-- NEW: DESTINATION INPUT -->
+    <div class="form-group">
+        <label for="destUrl">Folder Tujuan (Opsional)</label>
+        <input type="text" id="destUrl" placeholder="Link folder tujuan (jika kosong = default)">
+    </div>
+
     <div class="form-group">
         <div class="header-row">
             <label for="folderUrls">Daftar Link Sumber</label>
@@ -193,7 +202,7 @@
         <div style="font-size:0.7em; color:#aaa; margin-top:5px; margin-bottom:15px;">*Pisahkan ekstensi dengan koma.</div>
 
         <div class="form-group">
-            <label for="emailNotif">Email Notifikasi (Saat Selesai)</label>
+            <label for="emailNotif">Email Notifikasi</label>
             <input type="email" id="emailNotif" placeholder="email.anda@gmail.com">
         </div>
     </div>
@@ -207,6 +216,7 @@
     </div>
 
     <div class="btn-group">
+        <button id="checkBtn">🔍 Cek Folder</button>
         <button id="submitBtn">Mulai Proses</button>
         <button id="stopBtn">STOP 🛑</button>
     </div>
@@ -233,9 +243,11 @@
 
     // UI References
     const submitBtn = document.getElementById('submitBtn');
+    const checkBtn = document.getElementById('checkBtn');
     const stopBtn = document.getElementById('stopBtn');
     const bgToggle = document.getElementById('bgToggle');
     const folderUrlsInput = document.getElementById('folderUrls');
+    const destUrlInput = document.getElementById('destUrl');
     const clearInputBtn = document.getElementById('clearInputBtn');
     const accessPinInput = document.getElementById('accessPin');
     const settingsPanel = document.getElementById('settingsPanel');
@@ -275,7 +287,46 @@
         });
     }
 
-    // --- MAIN LOGIC ---
+    // --- CHECK FOLDER FUNCTION ---
+    checkBtn.addEventListener('click', async () => {
+        const rawText = folderUrlsInput.value;
+        const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+        const pin = accessPinInput.value;
+
+        if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
+        if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan setidaknya satu link untuk dicek.' }); return; }
+
+        Swal.fire({ title: 'Memindai...', text: 'Sedang menghitung file & ukuran...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            // Ambil link pertama saja untuk demo cek (atau loop jika mau)
+            const res = await sendRequest({ action: 'check_stats', url: urls[0], pin: pin });
+            
+            if (res.status === 'success') {
+                Swal.fire({
+                    title: '📊 Hasil Scan',
+                    html: `
+                        <div style="text-align:left; background:#222; padding:15px; border-radius:10px;">
+                            <p style="color:#00d2ff; font-weight:bold;">${res.name}</p>
+                            <hr style="border-color:#444">
+                            <table style="width:100%; color:#eee;">
+                                <tr><td>📄 Total File:</td><td style="text-align:right">${res.stats.files}</td></tr>
+                                <tr><td>📁 Total Folder:</td><td style="text-align:right">${res.stats.folders}</td></tr>
+                                <tr><td>💾 Total Ukuran:</td><td style="text-align:right; color:#2ed573; font-weight:bold;">${res.stats.size}</td></tr>
+                            </table>
+                        </div>
+                    `,
+                    background: '#111', color: '#fff', confirmButtonText: 'Tutup'
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: res.message });
+            }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+        }
+    });
+
+    // --- MAIN COPY LOGIC ---
 
     stopBtn.addEventListener('click', async () => {
         isStopRequested = true; stopBtn.disabled = true; stopBtn.textContent = "Stopping...";
@@ -291,6 +342,7 @@
         const rawText = folderUrlsInput.value;
         const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
         const pin = accessPinInput.value;
+        const destUrl = destUrlInput.value.trim();
         
         if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
@@ -298,6 +350,7 @@
         // Gather Config
         const config = {
             mode: duplicateModeInput.value,
+            destUrl: destUrl, // KIRIM TUJUAN KE SERVER
             filters: {
                 maxSizeMB: parseInt(maxSizeInput.value) || 0,
                 ignoredExt: ignoredExtInput.value
@@ -308,8 +361,8 @@
         isStopRequested = false; setUIState('running'); clearLog(); startTimer();
         
         addLog(`🔐 PIN: OK | Mode: ${config.mode.toUpperCase()}`, 'info');
-        if(config.filters.maxSizeMB) addLog(`⚠️ Limit Size: ${config.filters.maxSizeMB} MB`, 'info');
-        if(config.filters.ignoredExt) addLog(`🚫 Ignored: ${config.filters.ignoredExt}`, 'info');
+        if (destUrl) addLog(`📂 Tujuan Custom: Deteksi URL...`, 'info');
+        else addLog(`📂 Tujuan: Default Folder`, 'info');
 
         if (bgToggle.checked) {
             try {
@@ -374,17 +427,15 @@
         } else {
             globalStatus.textContent = "SELESAI"; 
             
-            // --- KIRIM LAPORAN & LOG (FOREGROUND - ALWAYS) ---
             addLog("📝 Mencatat Log...", "info");
             try {
                 const reportRes = await sendRequest({
                     action: 'send_report',
                     pin: pin,
-                    email: config.email || "", // Kirim string kosong agar tetap dicatat di sheet
+                    email: config.email || "", 
                     stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) }
                 });
                 
-                // NOTIFIKASI EMAIL DI HTML (SESUAI REQUEST)
                 if (reportRes.emailStatus === 'sent') {
                     addLog("📧 Email berhasil terkirim!", "success");
                 } else if (reportRes.emailStatus === 'failed') {
@@ -433,10 +484,7 @@
                             let type = 'success';
                             if(item.status === 'skipped') type = 'skip';
                             if(item.status === 'error') type = 'error';
-                            
-                            // Only update target URL if success
                             if (item.status === 'success' && sourceType === 'file') targetUrl = item.url;
-                            
                             addLogHTML(item.name, item.url, item.size, type);
                         });
                     }
@@ -487,11 +535,11 @@
     async function sendRequest(payload) { const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); return await response.json(); }
     function setUIState(state) {
         if (state === 'running') {
-            submitBtn.style.display = 'none'; stopBtn.style.display = 'block'; stopBtn.disabled = false; stopBtn.textContent = "STOP 🛑";
-            folderUrlsInput.disabled = true; bgToggle.disabled = true; accessPinInput.disabled = true;
+            submitBtn.style.display = 'none'; checkBtn.style.display = 'none'; stopBtn.style.display = 'block'; stopBtn.disabled = false; stopBtn.textContent = "STOP 🛑";
+            folderUrlsInput.disabled = true; destUrlInput.disabled = true; bgToggle.disabled = true; accessPinInput.disabled = true;
             progressWrapper.style.display = 'block'; logArea.style.display = 'block';
         } else {
-            submitBtn.style.display = 'block'; stopBtn.style.display = 'none'; folderUrlsInput.disabled = false; bgToggle.disabled = false; accessPinInput.disabled = false;
+            submitBtn.style.display = 'block'; checkBtn.style.display = 'block'; stopBtn.style.display = 'none'; folderUrlsInput.disabled = false; destUrlInput.disabled = false; bgToggle.disabled = false; accessPinInput.disabled = false;
         }
     }
     function updateProgress(percent, text) { progressBar.style.width = percent + "%"; document.getElementById('progressPercent').textContent = percent + "%"; document.getElementById('progressText').textContent = text; }
