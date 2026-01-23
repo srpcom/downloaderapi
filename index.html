@@ -183,7 +183,8 @@
         <div class="form-group">
             <label for="duplicateMode">Mode Duplikasi:</label>
             <select id="duplicateMode">
-                <option value="copy">🔵 Copy Biasa</option>
+                <option value="copy">🔵 Copy Biasa (Duplikat)</option>
+                <option value="move">🚀 Pindah (Move & Delete Source)</option>
                 <option value="skip">⏩ Skip (Jika file ada)</option>
                 <option value="replace">🔴 Timpa (Replace)</option>
             </select>
@@ -287,7 +288,7 @@
         });
     }
 
-    // --- CHECK FOLDER FUNCTION ---
+    // --- CHECK FOLDER FUNCTION (UPDATED WITH PERMISSION) ---
     checkBtn.addEventListener('click', async () => {
         const rawText = folderUrlsInput.value;
         const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
@@ -296,7 +297,7 @@
         if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan setidaknya satu link untuk dicek.' }); return; }
 
-        Swal.fire({ title: 'Memindai...', text: 'Sedang menghitung file & ukuran...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        Swal.fire({ title: 'Memindai...', text: 'Sedang menghitung file & permission...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
         try {
             // Ambil link pertama saja untuk demo cek
@@ -313,6 +314,7 @@
                                 <tr><td>📄 Total File:</td><td style="text-align:right">${res.stats.files}</td></tr>
                                 <tr><td>📁 Total Folder:</td><td style="text-align:right">${res.stats.folders}</td></tr>
                                 <tr><td>💾 Total Ukuran:</td><td style="text-align:right; color:#2ed573; font-weight:bold;">${res.stats.size}</td></tr>
+                                <tr><td>🔒 Status Akses:</td><td style="text-align:right; color:#f4b400;">${res.access}</td></tr>
                             </table>
                         </div>
                     `,
@@ -357,6 +359,20 @@
             },
             email: emailNotifInput.value
         };
+
+        if (config.mode === 'move') {
+            const confirmMove = await Swal.fire({
+                title: 'Konfirmasi Move?',
+                text: "Mode 'Move' akan MENGHAPUS file di folder asal setelah berhasil dicopy. Yakin?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Pindahkan & Hapus!',
+                cancelButtonText: 'Batal'
+            });
+            if (!confirmMove.isConfirmed) return;
+        }
 
         isStopRequested = false; setUIState('running'); clearLog(); startTimer();
         
