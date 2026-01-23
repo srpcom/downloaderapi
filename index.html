@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G-Drive Multi Cloner (Turbo2)</title>
+    <title>G-Drive Cloner (Detailed Log)</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js"></script>
@@ -12,8 +12,8 @@
     <style>
         :root {
             --primary: #00d2ff; --secondary: #ff00de;
-            --glass-bg: rgba(20, 20, 30, 0.6); --glass-border: rgba(255, 255, 255, 0.1);
-            --text-color: #ffffff; --input-bg: rgba(0, 0, 0, 0.3);
+            --glass-bg: rgba(20, 20, 30, 0.7); --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff; --input-bg: rgba(0, 0, 0, 0.4);
         }
         body {
             font-family: 'Poppins', sans-serif;
@@ -27,7 +27,7 @@
             position: relative; z-index: 1; background: var(--glass-bg);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             padding: 2rem; border-radius: 20px; border: 1px solid var(--glass-border);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); width: 100%; max-width: 550px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); width: 100%; max-width: 600px;
             animation: fadeIn 0.8s ease-out;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -105,25 +105,35 @@
         }
         .progress-container { width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-top: 5px;}
         .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #f4b400, #ff00de, #00d2ff); border-radius: 10px; transition: width 0.4s ease; }
+        
         .log-area {
-            margin-top: 15px; max-height: 150px; overflow-y: auto; 
+            margin-top: 15px; max-height: 200px; overflow-y: auto; 
             background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px;
-            font-size: 0.75rem; font-family: monospace; display: none;
+            font-size: 0.8rem; font-family: 'Consolas', monospace; display: none;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        .log-item { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .log-success { color: #00d2ff; } .log-error { color: #ff4757; } .log-skip { color: #ffa502; } .log-info { color: #ddd; }
-
-        .result-btn-container { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; max-height: 150px; overflow-y: auto; }
-        .result-link-btn {
-            display: block; padding: 10px; background: rgba(0, 210, 255, 0.15); 
-            border: 1px solid rgba(0, 210, 255, 0.5); color: #00d2ff; text-decoration: none; 
-            border-radius: 6px; font-size: 0.9em; transition: 0.2s; text-align: center;
+        /* Style Log yang Lebih Rapi */
+        .log-item { 
+            padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); 
+            display: flex; justify-content: flex-start; align-items: center; gap: 8px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .result-link-btn:hover { background: rgba(0, 210, 255, 0.3); color: white; }
+        .log-item a { color: inherit; text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.3); }
+        .log-item a:hover { color: white; border-bottom: 1px solid white; }
+        .log-icon { flex-shrink: 0; width: 15px; text-align: center; }
+        .log-success { color: #00d2ff; } 
+        .log-error { color: #ff4757; } 
+        .log-info { color: #ddd; }
+        .log-size { font-size: 0.7em; color: #888; margin-left: auto; padding-left: 10px; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        
+        /* Custom Table for Alert */
+        .swal-table { width: 100%; font-size: 0.9em; margin-top: 10px; border-collapse: collapse; }
+        .swal-table td { padding: 5px; border-bottom: 1px solid #333; color: #ddd; text-align: left; }
+        .swal-table td:last-child { text-align: right; font-weight: bold; color: #fff; }
     </style>
 </head>
 <body>
@@ -173,7 +183,7 @@
 </div>
 
 <script>
-    // --- KONFIGURASI URL SCRIPT ---
+    // --- GANTI URL INI DENGAN URL WEB APP ANDA ---
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVMco1a7VA7GkY6OyxFm239RXZlqMsTUy9kheMJthucelNETE9Zu9B9jqMB9mgyWbr/exec"; 
     
     // --- TURBO MODE: 5 WORKERS ---
@@ -240,7 +250,7 @@
                 if (res.status === 'success') {
                     addLog("✅ " + res.message, "success"); globalStatus.textContent = "BERJALAN DI SERVER"; 
                     if (typeof launchConfetti === 'function') launchConfetti();
-                    Swal.fire({ icon: 'success', title: 'Started!', text: 'Proses berjalan di server.', confirmButtonText: 'Oke' });
+                    Swal.fire({ icon: 'success', title: 'Started!', text: 'Proses berjalan di background. Anda boleh menutup tab ini.', confirmButtonText: 'Oke' });
                 } else { addLog("❌ Gagal: " + res.message, "error"); setUIState('stopped'); stopTimer(); }
             } catch (e) { addLog("❌ Error: " + e.message, "error"); setUIState('stopped'); stopTimer(); }
         } else {
@@ -260,18 +270,27 @@
             try {
                 addLog(`▶ [${i+1}/${urls.length}] Connecting: ${shortUrl(currentUrl)}`, 'info');
                 const result = await processSingleFolder(currentUrl);
-                successCount++;
+                
+                // Tambahkan log khusus untuk folder/file induk
                 const itemType = result.type === 'file' ? 'File' : 'Folder';
-                addLog(`✅ Selesai: ${itemType} "${result.name}" (${result.files} items).`, 'success');
                 
-                grandTotalFiles += result.files; grandTotalBytes += parseBytesToNum(result.sizeStr);
+                // Cek apakah ada file yang gagal di dalam folder ini
+                // result.processedFiles adalah yang sukses
                 
-                if (result.url) {
-                    const icon = result.type === 'file' ? '📄' : '📂';
-                    resultLinks.push({ name: `${icon} ${result.name}`, url: result.url });
+                if (result.files > 0 || result.type === 'file') {
+                     successCount++;
+                     addLog(`✅ Selesai: ${itemType} "${result.name}" (${result.files} items).`, 'success');
+                     if (result.url) resultLinks.push({ name: `${itemType}: ${result.name}`, url: result.url });
+                } else {
+                     // Jika folder kosong atau gagal total
+                     addLog(`⚠️ Selesai dengan peringatan: ${result.name} (0 file disalin).`, 'info');
                 }
+                
+                grandTotalFiles += result.files; 
+                grandTotalBytes += parseBytesToNum(result.sizeStr);
+
             } catch (error) {
-                failCount++; addLog(`❌ Gagal: ${error.message}`, 'error');
+                failCount++; addLog(`❌ Gagal Total: ${error.message}`, 'error');
             }
         }
 
@@ -282,31 +301,8 @@
         } else {
             globalStatus.textContent = "SELESAI"; 
             if (typeof launchConfetti === 'function') launchConfetti();
-            let linksHtml = "";
-            if (resultLinks.length > 0) {
-                linksHtml += `<div class="result-btn-container">`;
-                resultLinks.forEach(link => {
-                    linksHtml += `<a href="${link.url}" target="_blank" class="result-link-btn">Buka: ${link.name}</a>`;
-                });
-                linksHtml += `</div>`;
-            } else if (successCount > 0) {
-                 linksHtml += `<p style="color:#aaa; font-size:0.8em; margin-top:10px;">(Link hasil tidak tersedia)</p>`;
-            }
-
-            Swal.fire({
-                icon: 'success', title: '🎉 Selesai Semua! 🎉',
-                html: `
-                    <div style="text-align:left; color:#ddd;">
-                        <p>Waktu: <b>${timerDisplay.textContent}</b></p>
-                        <p>Total Item Disalin: <b>${grandTotalFiles}</b></p>
-                        <p>Total Ukuran: <b>${formatBytes(grandTotalBytes)}</b></p>
-                        <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
-                        <p style="font-size:0.9em">Berhasil: ${successCount} | Gagal: ${failCount}</p>
-                        ${linksHtml}
-                    </div>
-                `,
-                background: '#111116', color: '#fff', confirmButtonText: 'Mantap!', confirmButtonColor: '#ff00de'
-            });
+            
+            showFinalReport(successCount, failCount, grandTotalFiles, grandTotalBytes, resultLinks);
         }
     }
 
@@ -318,7 +314,7 @@
 
         const jobId = initRes.jobId; const total = initRes.totalFiles;
         const sourceName = initRes.sourceName || "Item";
-        let targetUrl = initRes.targetUrl; // Default folder URL
+        let targetUrl = initRes.targetUrl; 
         const sourceType = initRes.type || 'folder';
 
         const actionText = sourceType === 'file' ? 'Menyalin File' : 'Menyalin Folder';
@@ -338,9 +334,18 @@
                     updateProgress(p.percent, `${actionText}: ${p.processed}/${p.total}`);
                     finalProcessed = p.processed; finalSizeStr = p.currentSize;
 
-                    // Update URL jika tipe FILE dan batch selesai
+                    // --- DETAIL LOG PROCESSING ---
+                    // Menampilkan detail setiap file yang berhasil di-copy
                     if (res.processedList && res.processedList.length > 0) {
-                        if (sourceType === 'file') targetUrl = res.processedList[0].url; 
+                        res.processedList.forEach(item => {
+                            if (item.status === 'success') {
+                                // Update targetUrl jika ini adalah single file copy
+                                if (sourceType === 'file') targetUrl = item.url;
+                                addLogHTML(item.name, item.url, item.size, 'success');
+                            } else {
+                                addLogHTML(item.name, "#", "-", 'error');
+                            }
+                        });
                     }
 
                     if (res.action === 'complete') isFinished = true;
@@ -354,6 +359,37 @@
         return { files: finalProcessed, sizeStr: finalSizeStr, url: targetUrl, name: sourceName, type: sourceType };
     }
 
+    function showFinalReport(success, fail, totalFiles, totalBytes, links) {
+        let linksHtml = "";
+        if (links.length > 0) {
+            linksHtml += `<div class="result-btn-container" style="margin-top:15px; border-top:1px solid #333; padding-top:10px;">`;
+            linksHtml += `<p style="font-size:0.8em; color:#aaa; margin-bottom:5px;">Hasil Copy (Folder Induk):</p>`
+            links.forEach(link => {
+                linksHtml += `<a href="${link.url}" target="_blank" class="result-link-btn">${link.name}</a>`;
+            });
+            linksHtml += `</div>`;
+        }
+
+        Swal.fire({
+            title: '🎉 Selesai 🎉',
+            html: `
+                <table class="swal-table">
+                    <tr><td>Total Link Sumber</td><td>${success + fail}</td></tr>
+                    <tr><td>Link Berhasil</td><td style="color:#00d2ff">${success}</td></tr>
+                    <tr><td>Link Gagal</td><td style="color:#ff4757">${fail}</td></tr>
+                    <tr><td>Total Item File</td><td>${totalFiles}</td></tr>
+                    <tr><td>Total Ukuran</td><td>${formatBytes(totalBytes)}</td></tr>
+                    <tr><td>Durasi</td><td>${timerDisplay.textContent}</td></tr>
+                </table>
+                ${linksHtml}
+            `,
+            background: '#111116', color: '#fff', 
+            confirmButtonText: 'Tutup', confirmButtonColor: '#ff00de',
+            allowOutsideClick: false
+        });
+    }
+
+    // --- HELPER FUNCTIONS ---
     function launchConfetti() {
         if (typeof confetti === 'undefined') return;
         var duration = 3000; var end = Date.now() + duration;
@@ -389,10 +425,31 @@
         document.getElementById('progressPercent').textContent = percent + "%";
         document.getElementById('progressText').textContent = text;
     }
+    
+    // Log standar (System message)
     function addLog(msg, type) {
-        const div = document.createElement('div'); div.className = 'log-item log-' + type; div.textContent = msg;
+        const div = document.createElement('div'); div.className = 'log-item log-' + type; 
+        div.innerHTML = `<span class="log-icon">${getIcon(type)}</span> <span>${msg}</span>`;
         logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight;
     }
+
+    // Log detail file (Bisa diklik)
+    function addLogHTML(name, url, size, type) {
+        const div = document.createElement('div'); div.className = 'log-item log-' + type;
+        const icon = type === 'success' ? '📄' : '❌';
+        const content = url && url !== '#' ? `<a href="${url}" target="_blank">${name}</a>` : name;
+        
+        div.innerHTML = `<span class="log-icon">${icon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${content}</span> <span class="log-size">${size}</span>`;
+        logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    function getIcon(type) {
+        if(type === 'success') return '✅';
+        if(type === 'error') return '❌';
+        if(type === 'info') return 'ℹ️';
+        return '•';
+    }
+
     function clearLog() { logArea.innerHTML = ''; }
     function shortUrl(url) { return url.length > 40 ? url.substring(0, 35) + "..." : url; }
 
