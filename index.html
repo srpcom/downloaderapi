@@ -148,6 +148,14 @@
         .swal-table { width: 100%; font-size: 0.9em; margin-top: 10px; border-collapse: collapse; }
         .swal-table td { padding: 5px; border-bottom: 1px solid #333; color: #ddd; text-align: left; }
         .swal-table td:last-child { text-align: right; font-weight: bold; color: #fff; }
+
+        /* New Style for multi-result box */
+        .result-box {
+            text-align: left; background: #222; padding: 15px; 
+            border-radius: 10px; margin-bottom: 10px; border: 1px solid #333;
+        }
+        .result-title { color: #00d2ff; font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; }
+        .result-info { font-size: 0.85rem; color: #ccc; }
     </style>
 </head>
 <body>
@@ -175,7 +183,7 @@
             <label for="folderUrls">Daftar Link Sumber</label>
             <button id="clearInputBtn" class="btn-clear">Clear</button>
         </div>
-        <textarea id="folderUrls" placeholder="https://drive.google.com/drive/folders/AAAA..."></textarea>
+        <textarea id="folderUrls" placeholder="Tempel banyak link di sini (pisahkan dengan koma atau baris baru)..."></textarea>
     </div>
 
     <div class="settings-toggle" onclick="toggleSettings()">⚙️ Pengaturan Lanjutan</div>
@@ -217,7 +225,7 @@
     </div>
 
     <div class="btn-group">
-        <button id="checkBtn">🔍 Cek Folder</button>
+        <button id="checkBtn">🔍 Cek Semua Link</button>
         <button id="submitBtn">Mulai Proses</button>
         <button id="stopBtn">STOP 🛑</button>
     </div>
@@ -288,44 +296,50 @@
         });
     }
 
-    // --- CHECK FOLDER FUNCTION (UPDATED WITH PERMISSION) ---
+    // --- CHECK FOLDER FUNCTION (MULTI-URL SUPPORT) ---
     checkBtn.addEventListener('click', async () => {
         const rawText = folderUrlsInput.value;
-        const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+        // FIX: Split by newline OR comma
+        const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
         const pin = accessPinInput.value;
 
         if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan setidaknya satu link untuk dicek.' }); return; }
 
-        Swal.fire({ title: 'Memindai...', text: 'Sedang menghitung file & permission...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        Swal.fire({ title: `Memindai ${urls.length} Link...`, text: 'Sedang mengambil data...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-        try {
-            // Ambil link pertama saja untuk demo cek
-            const res = await sendRequest({ action: 'check_stats', url: urls[0], pin: pin });
-            
-            if (res.status === 'success') {
-                Swal.fire({
-                    title: '📊 Hasil Scan',
-                    html: `
-                        <div style="text-align:left; background:#222; padding:15px; border-radius:10px;">
-                            <p style="color:#00d2ff; font-weight:bold;">${res.name}</p>
-                            <hr style="border-color:#444">
-                            <table style="width:100%; color:#eee;">
-                                <tr><td>📄 Total File:</td><td style="text-align:right">${res.stats.files}</td></tr>
-                                <tr><td>📁 Total Folder:</td><td style="text-align:right">${res.stats.folders}</td></tr>
-                                <tr><td>💾 Total Ukuran:</td><td style="text-align:right; color:#2ed573; font-weight:bold;">${res.stats.size}</td></tr>
-                                <tr><td>🔒 Status Akses:</td><td style="text-align:right; color:#f4b400;">${res.access}</td></tr>
-                            </table>
+        let resultsHTML = "";
+        let hasError = false;
+
+        for (let i = 0; i < urls.length; i++) {
+            try {
+                const res = await sendRequest({ action: 'check_stats', url: urls[i], pin: pin });
+                
+                if (res.status === 'success') {
+                    resultsHTML += `
+                        <div class="result-box">
+                            <div class="result-title">${i+1}. ${res.name} (${res.type === 'folder' ? '📁 Folder' : '📄 File'})</div>
+                            <div class="result-info">
+                                📄 File: ${res.stats.files} | 
+                                💾 Size: <span style="color:#2ed573">${res.stats.size}</span><br>
+                                🔒 Akses: <span style="color:#f4b400">${res.access}</span>
+                            </div>
                         </div>
-                    `,
-                    background: '#111', color: '#fff', confirmButtonText: 'Tutup'
-                });
-            } else {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: res.message });
+                    `;
+                } else {
+                    resultsHTML += `<div class="result-box" style="border-color:#ff4757"><div class="result-title" style="color:#ff4757">${i+1}. Gagal</div><div class="result-info">${res.message}</div></div>`;
+                    hasError = true;
+                }
+            } catch (e) {
+                resultsHTML += `<div class="result-box" style="border-color:#ff4757"><div class="result-title" style="color:#ff4757">${i+1}. Error</div><div class="result-info">${e.message}</div></div>`;
             }
-        } catch (e) {
-            Swal.fire({ icon: 'error', title: 'Error', text: e.message });
         }
+
+        Swal.fire({
+            title: '📊 Hasil Scan Lengkap',
+            html: `<div style="max-height:300px; overflow-y:auto; padding-right:5px;">${resultsHTML}</div>`,
+            background: '#111', color: '#fff', confirmButtonText: 'Tutup', width: '600px'
+        });
     });
 
     // --- MAIN COPY LOGIC ---
@@ -342,7 +356,8 @@
 
     submitBtn.addEventListener('click', async () => {
         const rawText = folderUrlsInput.value;
-        const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+        // FIX: Split by newline OR comma
+        const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
         const pin = accessPinInput.value;
         const destUrl = destUrlInput.value.trim();
         
