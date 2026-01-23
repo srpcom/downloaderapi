@@ -373,6 +373,21 @@
             addLog("⛔ Proses dihentikan.", "error"); globalStatus.textContent = "DIHENTIKAN";
         } else {
             globalStatus.textContent = "SELESAI"; 
+            
+            // --- KIRIM EMAIL LAPORAN (FOREGROUND) ---
+            if (config.email && config.email.includes("@")) {
+                addLog("📧 Mengirim laporan email...", "info");
+                try {
+                    await sendRequest({
+                        action: 'send_report',
+                        pin: pin,
+                        email: config.email,
+                        stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) }
+                    });
+                    addLog("✅ Email terkirim!", "success");
+                } catch(e) { console.error("Gagal kirim email: ", e); }
+            }
+
             if (typeof launchConfetti === 'function') launchConfetti();
             showFinalReport(successCount, failCount, grandTotalFiles, grandTotalBytes, resultLinks);
         }
