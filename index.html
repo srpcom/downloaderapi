@@ -299,7 +299,7 @@
         Swal.fire({ title: 'Memindai...', text: 'Sedang menghitung file & ukuran...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
         try {
-            // Ambil link pertama saja untuk demo cek (atau loop jika mau)
+            // Ambil link pertama saja untuk demo cek
             const res = await sendRequest({ action: 'check_stats', url: urls[0], pin: pin });
             
             if (res.status === 'success') {
@@ -350,7 +350,7 @@
         // Gather Config
         const config = {
             mode: duplicateModeInput.value,
-            destUrl: destUrl, // KIRIM TUJUAN KE SERVER
+            destUrl: destUrl,
             filters: {
                 maxSizeMB: parseInt(maxSizeInput.value) || 0,
                 ignoredExt: ignoredExtInput.value
@@ -429,10 +429,12 @@
             
             addLog("📝 Mencatat Log...", "info");
             try {
+                // KIRIM URLs DAN STATS UNTUK DICATAT DI SHEET
                 const reportRes = await sendRequest({
                     action: 'send_report',
                     pin: pin,
                     email: config.email || "", 
+                    urls: urls, // PENTING: Kirim daftar URL sumber
                     stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) }
                 });
                 
