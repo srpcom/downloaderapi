@@ -185,6 +185,12 @@
         <input type="text" id="destUrl" placeholder="Link folder tujuan (jika kosong = default)">
     </div>
 
+    <!-- NEW: SUBFOLDER INPUT -->
+    <div class="form-group">
+        <label for="newFolderName">Buat Folder Baru (Opsional)</label>
+        <input type="text" id="newFolderName" placeholder="Contoh: Gambarku (Semua file masuk ke sini)">
+    </div>
+
     <div class="form-group">
         <div class="header-row">
             <label for="folderUrls">Daftar Link Sumber</label>
@@ -270,6 +276,7 @@
     const bgToggle = document.getElementById('bgToggle');
     const folderUrlsInput = document.getElementById('folderUrls');
     const destUrlInput = document.getElementById('destUrl');
+    const newFolderNameInput = document.getElementById('newFolderName'); // New Input
     const clearInputBtn = document.getElementById('clearInputBtn');
     const accessPinInput = document.getElementById('accessPin');
     const settingsPanel = document.getElementById('settingsPanel');
@@ -378,6 +385,7 @@
         const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
         const pin = accessPinInput.value;
         const destUrl = destUrlInput.value.trim();
+        const newFolderName = newFolderNameInput.value.trim(); // Capture New Folder Name
         
         if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
@@ -386,6 +394,7 @@
         const config = {
             mode: duplicateModeInput.value,
             destUrl: destUrl,
+            newFolderName: newFolderName, // Send to backend
             filters: {
                 maxSizeMB: parseInt(maxSizeInput.value) || 0,
                 ignoredExt: ignoredExtInput.value
@@ -415,6 +424,8 @@
         addLog(`🔐 PIN: OK | Mode: ${config.mode.toUpperCase()}`, 'info');
         if (destUrl) addLog(`📂 Tujuan Custom: Deteksi URL...`, 'info');
         else addLog(`📂 Tujuan: Default Folder`, 'info');
+        
+        if (newFolderName) addLog(`📁 Sub-folder Baru: "${newFolderName}"`, 'info');
 
         if (bgToggle.checked) {
             try {
