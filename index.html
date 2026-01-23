@@ -69,6 +69,7 @@
             background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;
         }
         option { background: #1a1a2e; color: white; }
+        optgroup { background: #000; color: #f4b400; font-weight: bold; }
 
         /* Settings Panel */
         .settings-panel {
@@ -149,7 +150,6 @@
         .swal-table td { padding: 5px; border-bottom: 1px solid #333; color: #ddd; text-align: left; }
         .swal-table td:last-child { text-align: right; font-weight: bold; color: #fff; }
 
-        /* New Style for multi-result box */
         .result-box {
             text-align: left; background: #222; padding: 15px; 
             border-radius: 10px; margin-bottom: 10px; border: 1px solid #333;
@@ -189,12 +189,18 @@
     <div class="settings-toggle" onclick="toggleSettings()">⚙️ Pengaturan Lanjutan</div>
     <div class="settings-panel" id="settingsPanel">
         <div class="form-group">
-            <label for="duplicateMode">Mode Duplikasi:</label>
+            <label for="duplicateMode">Metode Duplikasi:</label>
             <select id="duplicateMode">
-                <option value="copy">🔵 Copy Biasa (Duplikat)</option>
-                <option value="move">🚀 Pindah (Move & Delete Source)</option>
-                <option value="skip">⏩ Skip (Jika file ada)</option>
-                <option value="replace">🔴 Timpa (Replace)</option>
+                <optgroup label="🔵 Mode Copy (File Sumber Tetap Aman)">
+                    <option value="copy_duplicate">Copy & Duplikat (Default)</option>
+                    <option value="copy_skip">Copy & Skip (Jika file ada, lewati)</option>
+                    <option value="copy_replace">Copy & Replace (Timpa file lama)</option>
+                </optgroup>
+                <optgroup label="🚀 Mode Move (File Sumber Dihapus)">
+                    <option value="move_duplicate">Move & Duplikat</option>
+                    <option value="move_skip">Move & Skip (Jika file ada, BATALKAN move)</option>
+                    <option value="move_replace">Move & Replace (Timpa file lama)</option>
+                </optgroup>
             </select>
         </div>
         
@@ -299,7 +305,6 @@
     // --- CHECK FOLDER FUNCTION (MULTI-URL SUPPORT) ---
     checkBtn.addEventListener('click', async () => {
         const rawText = folderUrlsInput.value;
-        // FIX: Split by newline OR comma
         const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
         const pin = accessPinInput.value;
 
@@ -356,7 +361,6 @@
 
     submitBtn.addEventListener('click', async () => {
         const rawText = folderUrlsInput.value;
-        // FIX: Split by newline OR comma
         const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
         const pin = accessPinInput.value;
         const destUrl = destUrlInput.value.trim();
@@ -375,15 +379,15 @@
             email: emailNotifInput.value
         };
 
-        if (config.mode === 'move') {
+        if (config.mode.startsWith('move_')) {
             const confirmMove = await Swal.fire({
                 title: 'Konfirmasi Move?',
-                text: "Mode 'Move' akan MENGHAPUS file di folder asal setelah berhasil dicopy. Yakin?",
+                text: "Mode 'Move' akan MENGHAPUS file di folder asal setelah sukses dicopy. Periksa kembali pilihan Anda!",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Pindahkan & Hapus!',
+                confirmButtonText: 'Ya, Lanjutkan!',
                 cancelButtonText: 'Batal'
             });
             if (!confirmMove.isConfirmed) return;
@@ -460,19 +464,16 @@
             
             addLog("📝 Mencatat Log...", "info");
             try {
-                // KIRIM URLs DAN STATS UNTUK DICATAT DI SHEET
                 const reportRes = await sendRequest({
                     action: 'send_report',
                     pin: pin,
                     email: config.email || "", 
-                    urls: urls, // PENTING: Kirim daftar URL sumber
+                    urls: urls,
                     stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) }
                 });
                 
                 if (reportRes.emailStatus === 'sent') {
                     addLog("📧 Email berhasil terkirim!", "success");
-                } else if (reportRes.emailStatus === 'failed') {
-                    addLog("⚠️ Email Gagal: " + reportRes.emailError, "error");
                 } else {
                     addLog("✅ Log tersimpan.", "success");
                 }
