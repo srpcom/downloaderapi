@@ -143,7 +143,7 @@
         .log-error { color: #ff4757; } 
         .log-skip { color: #f4b400; } 
         .log-info { color: #ddd; }
-        .log-warning { color: #ffa502; font-weight: bold; } /* NEW WARNING STYLE */
+        .log-warning { color: #ffa502; font-weight: bold; } 
 
         .log-size { font-size: 0.7em; color: #888; margin-left: auto; padding-left: 10px; }
 
@@ -285,6 +285,8 @@
 
     let isStopRequested = false;
     let timerInterval;
+    // Store detailed logs for the report
+    let currentSessionLogs = [];
 
     function toggleSettings() {
         settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
@@ -400,6 +402,9 @@
 
         isStopRequested = false; setUIState('running'); clearLog(); startTimer();
         
+        // Reset logs
+        currentSessionLogs = [];
+
         addLog(`🔐 PIN: OK | Mode: ${config.mode.toUpperCase()}`, 'info');
         if (destUrl) addLog(`📂 Tujuan Custom: Deteksi URL...`, 'info');
         else addLog(`📂 Tujuan: Default Folder`, 'info');
@@ -474,7 +479,8 @@
                     pin: pin,
                     email: config.email || "", 
                     urls: urls,
-                    stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) }
+                    stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) },
+                    details: currentSessionLogs // Send detail logs
                 });
                 
                 if (reportRes.emailStatus === 'sent') {
@@ -523,13 +529,20 @@
                             let type = 'success';
                             if(item.status === 'skipped') type = 'skip';
                             if(item.status === 'error') type = 'error';
-                            if(item.status === 'warning') type = 'warning'; // NEW STATUS
+                            if(item.status === 'warning') type = 'warning'; 
                             
                             if (item.status === 'success' && sourceType === 'file') targetUrl = item.url;
                             
-                            // Updated to show detailed info/error message from backend
                             let displayInfo = item.info; 
                             if(item.status === 'warning') displayInfo = "⚠️ " + item.info;
+
+                            // Simpan ke log global untuk dikirim nanti
+                            currentSessionLogs.push({
+                                name: item.name,
+                                url: (item.url && item.url !== '#') ? item.url : 'No Link',
+                                status: type.toUpperCase(),
+                                info: displayInfo
+                            });
 
                             addLogHTML(item.name, item.url, item.size, type, displayInfo);
                         });
