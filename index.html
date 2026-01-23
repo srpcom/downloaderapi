@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G-Drive Ultimate Cloner</title>
+    <title>G-Drive Ultimate</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js"></script>
@@ -374,19 +374,26 @@
         } else {
             globalStatus.textContent = "SELESAI"; 
             
-            // --- KIRIM EMAIL LAPORAN (FOREGROUND) ---
-            if (config.email && config.email.includes("@")) {
-                addLog("📧 Mengirim laporan email...", "info");
-                try {
-                    await sendRequest({
-                        action: 'send_report',
-                        pin: pin,
-                        email: config.email,
-                        stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) }
-                    });
-                    addLog("✅ Email terkirim!", "success");
-                } catch(e) { console.error("Gagal kirim email: ", e); }
-            }
+            // --- KIRIM LAPORAN & LOG (FOREGROUND - ALWAYS) ---
+            addLog("📝 Mencatat Log...", "info");
+            try {
+                const reportRes = await sendRequest({
+                    action: 'send_report',
+                    pin: pin,
+                    email: config.email || "", // Kirim string kosong agar tetap dicatat di sheet
+                    stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) }
+                });
+                
+                // NOTIFIKASI EMAIL DI HTML (SESUAI REQUEST)
+                if (reportRes.emailStatus === 'sent') {
+                    addLog("📧 Email berhasil terkirim!", "success");
+                } else if (reportRes.emailStatus === 'failed') {
+                    addLog("⚠️ Email Gagal: " + reportRes.emailError, "error");
+                } else {
+                    addLog("✅ Log tersimpan.", "success");
+                }
+
+            } catch(e) { console.error("Gagal lapor: ", e); }
 
             if (typeof launchConfetti === 'function') launchConfetti();
             showFinalReport(successCount, failCount, grandTotalFiles, grandTotalBytes, resultLinks);
