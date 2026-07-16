@@ -242,7 +242,7 @@ function handleCheckStats(data) {
     var totalFiles = 1;
     var isApprox = true;
 
-    if (data.deepScan && isFolder) {
+    if (isFolder) {
         try {
             var folder = DriveApp.getFolderById(id);
             var stats = scanFolderRecursive(folder, null, null, true, null, false);
