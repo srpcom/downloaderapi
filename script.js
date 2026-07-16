@@ -9,7 +9,7 @@
 
 var SCRIPT_PROP = PropertiesService.getScriptProperties();
 
-var DEFAULT_DEST_ID = SCRIPT_PROP.getProperty('DEFAULT_DEST_ID') || "1sw8EPAX6mgcAuxOyhz4-S9uYjcDJmL_q"; // ID Folder Tujuan Default
+var DEFAULT_DEST_ID = SCRIPT_PROP.getProperty('DEFAULT_DEST_ID') || "1bG8M11VUfGcW5_FIjWiuoURL9QlnQZPS"; // ID Folder Tujuan Default
 var LOG_SHEET_ID = SCRIPT_PROP.getProperty('LOG_SHEET_ID') || "181frqAI898WbVdFkp2AufEhHCfwXDhBhWBQ3CzBnUWo"; // ID Spreadsheet Log
 var LOG_SHEET_GID = Number(SCRIPT_PROP.getProperty('LOG_SHEET_GID')) || 587199847; 
 var ACCESS_PIN = SCRIPT_PROP.getProperty('ACCESS_PIN') || "1"; // PIN Akses
