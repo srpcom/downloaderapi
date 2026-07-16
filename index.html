@@ -728,6 +728,11 @@
                         <option value="rename_skip">Copy & Rename (Skip jika target ada)</option>
                         <option value="rename_replace">Copy & Rename (Replace jika target ada)</option>
                     </optgroup>
+                    <optgroup label="📦 Mode Move / Pindahkan (Hapus Sumber Setelah Disalin)">
+                        <option value="move_duplicate">Move & Duplikat</option>
+                        <option value="move_skip">Move & Skip (Jika target ada, lewati)</option>
+                        <option value="move_replace">Move & Replace (Timpa target lama)</option>
+                    </optgroup>
                 </select>
                 
                 <div id="renameInputContainer" style="display: none; margin-top: 10px;">
@@ -1214,10 +1219,13 @@
             email: document.getElementById('emailNotif').value
         };
 
-        if (config.mode.startsWith('rename_')) {
-            const confirmMove = await Swal.fire({
-                title: 'Konfirmasi Rename?',
-                text: `File sumber akan diganti namanya dengan awalan "${renamePrefix}". Pastikan Anda memiliki akses Editor/Writer di folder sumber!`,
+        if (config.mode.startsWith('rename_') || config.mode.startsWith('move_')) {
+            const isMove = config.mode.startsWith('move_');
+            const confirmAction = await Swal.fire({
+                title: isMove ? 'Konfirmasi Pindahkan (Move)?' : 'Konfirmasi Rename?',
+                text: isMove 
+                    ? 'PERINGATAN: File/folder sumber akan disalin ke tujuan dan berkas asli di folder sumber akan DIHAPUS (dimasukkan ke Trash). Pastikan Anda memiliki akses Editor/Writer di folder sumber!' 
+                    : `File sumber akan diganti namanya dengan awalan "${renamePrefix}". Pastikan Anda memiliki akses Editor/Writer di folder sumber!`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: 'var(--error)',
@@ -1227,7 +1235,7 @@
                 background: '#111',
                 color: '#fff'
             });
-            if (!confirmMove.isConfirmed) return;
+            if (!confirmAction.isConfirmed) return;
         }
 
         isStopRequested = false;
@@ -1243,6 +1251,7 @@
         
         if (newFolderName) addLog(`📁 Sub-folder Baru Akan Dibuat: "${newFolderName}"`, 'info');
         if (config.mode.startsWith('rename_')) addLog(`✏️ Rename Prefix Sumber: "${renamePrefix}"`, 'info');
+        if (config.mode.startsWith('move_')) addLog(`⚠️ Mode: Pindahkan / Move (Berkas Asli Sumber Akan DIHAPUS Setelah Disalin)`, 'warning');
 
         const bgMode = document.getElementById('bgToggle').checked;
         if (bgMode) {

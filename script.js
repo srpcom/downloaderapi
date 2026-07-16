@@ -337,13 +337,13 @@ function handleInitialize(data) {
       finalTargetUrl = data.destUrl || "Remote Server";
     }
     
-    var jobData = { 
+        var jobData = { 
         jobId: Utilities.getUuid(), status: 'running', mode: data.mode || 'copy_duplicate', 
         filters: data.filters || {}, totalFiles: calcFiles, processedFiles: 0, totalSize: calcSize, processedSize: 0, 
         queue: [], rootTargetUrl: finalTargetUrl, renamePrefix: data.renamePrefix || "[MOVED] ",
         isSchedule: data.isSchedule, scheduleId: data.scheduleId, sourceUrl: sourceUrl, 
         targetParentIdForRetention: targetParentId, maxBackups: data.maxBackups, remoteTargetUrl: data.remoteTargetUrl,
-        sourceName: sourceName, sourceOwner: sourceOwner, sourceAccess: sourceAccess
+        sourceName: sourceName, sourceOwner: sourceOwner, sourceAccess: sourceAccess, sourceId: sourceId
     };
     
     if (isFolder) {
@@ -398,9 +398,23 @@ function handleBatch(jobId) {
   try {
     job = loadJobState(jobId); if (!job) return responseJSON({ status: 'error', message: "Job Expired" });
     
-    if (job.queue.length === 0) { 
+        if (job.queue.length === 0) { 
         if(job.isSchedule && !job.remoteTargetUrl) cleanupOldBackups(job.targetParentIdForRetention, "Backup ", job.maxBackups);
         var finalProcessed = job.processedFiles; var finalTotal = job.totalFiles; var finalSize = job.processedSize;
+        
+        // Hapus folder/file induk sumber jika mode Pindah
+        if (job.mode.startsWith('move') && job.sourceId) {
+            try {
+                var srcFolder = DriveApp.getFolderById(job.sourceId);
+                srcFolder.setTrashed(true);
+            } catch(e) {
+                try {
+                    var srcFile = DriveApp.getFileById(job.sourceId);
+                    srcFile.setTrashed(true);
+                } catch(err) {}
+            }
+        }
+        
         try {
             var destFolderName = "Remote Server"; var destFolderUrl = ""; 
             if(!job.remoteTargetUrl) { try { var df = DriveApp.getFolderById(job.targetParentIdForRetention); destFolderName = df.getName(); destFolderUrl = df.getUrl(); } catch(e){} }
@@ -436,15 +450,28 @@ function handleBatch(jobId) {
             var destF = DriveApp.getFolderById(it.targetFolderId); 
             var cleanName = it.name.trim();
             var existing = destF.getFilesByName(cleanName);
+            var sourceFile = DriveApp.getFileById(it.id);
+            var copiedFile;
+            
             if (existing.hasNext()) {
-                if (job.mode === 'copy_skip') { status = 'skipped'; info = 'Skipped'; }
-                else if (job.mode === 'copy_replace') { 
+                if (job.mode === 'copy_skip' || job.mode === 'move_skip') { status = 'skipped'; info = 'Skipped'; }
+                else if (job.mode === 'copy_replace' || job.mode === 'move_replace') { 
                     while(existing.hasNext()) { existing.next().setTrashed(true); } 
-                    var c = DriveApp.getFileById(it.id).makeCopy(cleanName, destF); newUrl = c.getUrl(); info = "Replaced"; 
+                    copiedFile = sourceFile.makeCopy(cleanName, destF); newUrl = copiedFile.getUrl(); info = "Replaced"; 
                 }
-                else if (job.mode.indexOf('rename') > -1) { var c = DriveApp.getFileById(it.id).makeCopy(job.renamePrefix + cleanName, destF); newUrl = c.getUrl(); info = "Renamed"; }
-                else { var c = DriveApp.getFileById(it.id).makeCopy(cleanName, destF); newUrl = c.getUrl(); info = "Duplicated"; }
-            } else { var c = DriveApp.getFileById(it.id).makeCopy(cleanName, destF); newUrl = c.getUrl(); }
+                else if (job.mode.indexOf('rename') > -1) { copiedFile = sourceFile.makeCopy(job.renamePrefix + cleanName, destF); newUrl = copiedFile.getUrl(); info = "Renamed"; }
+                else { copiedFile = sourceFile.makeCopy(cleanName, destF); newUrl = copiedFile.getUrl(); info = "Duplicated"; }
+            } else { copiedFile = sourceFile.makeCopy(cleanName, destF); newUrl = copiedFile.getUrl(); }
+            
+            // Jika mode Move, hapus file sumber asli setelah berhasil di-copy
+            if (job.mode.startsWith('move') && status !== 'skipped') {
+                try {
+                    sourceFile.setTrashed(true);
+                    info = info === "Copied" ? "Moved" : "Moved (" + info + ")";
+                } catch(e) {
+                    info += " (Move Failed: " + e.message + ")";
+                }
+            }
         }
         processed.push({ name: it.name, url: newUrl, size: formatBytes(it.size), status: status, info: info });
     } catch (e) { processed.push({ name: it.name, status: 'error', info: e.message }); }
