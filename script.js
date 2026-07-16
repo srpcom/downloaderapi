@@ -216,9 +216,28 @@ function handleCheckStats(data) {
   var id = extractIdFromUrl(data.url);
   if (!id) return responseJSON({ status: 'error', message: "URL Invalid" });
   try {
-    var f = Drive.Files.get(id, {fields: "name, mimeType, size, capabilities, owners", supportsAllDrives: true});
-    var perm = f.capabilities.canEdit ? "Writer" : (f.capabilities.canRead ? "Viewer" : "Restricted");
+    var f = Drive.Files.get(id, {fields: "name, mimeType, size, capabilities, owners, shared", supportsAllDrives: true});
     var isFolder = (f.mimeType.indexOf('folder') > -1);
+    
+    // Hitung tipe sharing access
+    var sharingAccess = "Private";
+    try {
+      var item = isFolder ? DriveApp.getFolderById(id) : DriveApp.getFileById(id);
+      var sa = item.getSharingAccess();
+      if (sa === DriveApp.Access.ANYONE || sa === DriveApp.Access.ANYONE_WITH_LINK) {
+        sharingAccess = "Public (Anyone with link)";
+      } else if (sa === DriveApp.Access.DOMAIN || sa === DriveApp.Access.DOMAIN_WITH_LINK) {
+        sharingAccess = "Domain Shared";
+      } else if (f.shared) {
+        sharingAccess = "Shared (Specific People)";
+      }
+    } catch(e) {
+      if (f.shared) {
+        sharingAccess = "Shared";
+      }
+    }
+    
+    var perm = (f.capabilities.canEdit ? "Writer" : "Viewer") + " | " + sharingAccess;
     var totalSize = parseInt(f.size || 0);
     var totalFiles = 1;
     var isApprox = true;
