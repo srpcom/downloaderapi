@@ -3,168 +3,673 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G-Drive Ultimate</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>G-Drive Ultimate Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         :root {
-            --primary: #00d2ff; --secondary: #ff00de;
-            --glass-bg: rgba(20, 20, 30, 0.75); --glass-border: rgba(255, 255, 255, 0.1);
-            --text-color: #ffffff; --input-bg: rgba(0, 0, 0, 0.5);
+            --primary: #00d2ff;
+            --secondary: #ff00de;
+            --accent: #6c5ce7;
+            --success: #2ed573;
+            --error: #ff4757;
+            --warning: #ffa502;
+            --glass-bg: rgba(20, 20, 35, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-color: #ffffff;
+            --input-bg: rgba(0, 0, 0, 0.4);
         }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
-            background: #0f0c29; background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
-            display: flex; justify-content: center; align-items: center; min-height: 100vh;
-            margin: 0; padding: 20px; color: var(--text-color); overflow-x: hidden; position: relative;
+            background: #0f0c29;
+            background: linear-gradient(135deg, #24243e, #302b63, #0f0c29);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
         }
-        #tsparticles { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 0; }
-        
+
+        #tsparticles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
         .container {
-            position: relative; z-index: 1; background: var(--glass-bg);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            padding: 2rem; border-radius: 20px; border: 1px solid var(--glass-border);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); width: 100%; max-width: 600px;
+            position: relative;
+            z-index: 1;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 2.5rem;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
+            width: 100%;
+            max-width: 900px;
             animation: fadeIn 0.8s ease-out;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
 
         h1 {
-            font-size: 1.8rem; margin-bottom: 0.5rem; text-align: center;
-            background: linear-gradient(to right, #00d2ff, #ff00de, #f4b400); 
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            font-weight: 700; text-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
+            font-size: 2.2rem;
+            margin-bottom: 0.3rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary), #f4b400); 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            text-shadow: 0 0 30px rgba(0, 210, 255, 0.25);
         }
-        p.subtitle { text-align: center; color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-bottom: 1.5rem; }
 
-        .form-group { margin-bottom: 1.2rem; }
-        label { display: block; margin-bottom: 0.6rem; color: #d1d8e0; font-size: 0.85rem; font-weight: 500; }
-        
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
-        .btn-clear {
-            width: auto !important; padding: 4px 10px !important; font-size: 0.75rem !important;
-            background: rgba(255, 71, 87, 0.2) !important; border: 1px solid rgba(255, 71, 87, 0.5) !important;
-            color: #ff4757 !important; margin: 0 !important; border-radius: 6px !important; 
+        p.subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95rem;
         }
-        .btn-clear:hover { background: rgba(255, 71, 87, 0.4) !important; color: white !important; }
+
+        /* Nav Tabs */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.35);
+        }
+
+        .tab-content {
+            display: none;
+            animation: tabFade 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes tabFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form Components */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.6rem;
+            color: #d1d8e0;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .btn-clear {
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.4);
+            color: #ff4757;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-clear:hover {
+            background: rgba(255, 71, 87, 0.35);
+            color: #fff;
+        }
 
         textarea, input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
-            width: 100%; padding: 12px 15px; background: var(--input-bg);
-            border: 1px solid var(--glass-border); border-radius: 10px;
-            font-size: 0.9rem; color: white; box-sizing: border-box;
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: #fff;
+            box-sizing: border-box;
             font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
         }
-        textarea:focus, input:focus { outline: none; border-color: var(--primary); }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+        }
 
         select {
-            width: 100%; padding: 12px 15px; background: var(--input-bg);
-            border: 1px solid var(--glass-border); border-radius: 10px;
-            font-size: 0.9rem; color: white; box-sizing: border-box;
-            font-family: 'Poppins', sans-serif; cursor: pointer;
-            appearance: none; -webkit-appearance: none;
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: #fff;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
             background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2300d2ff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;
+            background-repeat: no-repeat;
+            background-position: right 16px top 50%;
+            background-size: 12px auto;
         }
-        option { background: #1a1a2e; color: white; }
-        optgroup { background: #000; color: #f4b400; font-weight: bold; }
+
+        option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        /* Buttons & Actions */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 1.5rem;
+        }
+
+        button.action-btn {
+            flex: 1;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button.action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        button.action-btn:disabled {
+            background: #444 !important;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--accent), var(--secondary));
+            background-size: 200% 200%;
+            animation: gradientAnim 4s ease infinite;
+        }
+
+        .btn-secondary {
+            background: var(--accent);
+        }
+
+        .btn-danger {
+            background: var(--error);
+        }
+
+        @keyframes gradientAnim {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
         /* Settings Panel */
-        .settings-panel {
-            background: rgba(0,0,0,0.2); border-radius: 10px; padding: 15px; margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.05); display: none;
-        }
         .settings-toggle {
-            cursor: pointer; color: #00d2ff; font-size: 0.9rem; text-align: right;
-            margin-bottom: 10px; user-select: none;
+            cursor: pointer;
+            color: var(--primary);
+            font-size: 0.85rem;
+            text-align: right;
+            margin-bottom: 12px;
+            user-select: none;
+            display: inline-block;
+            float: right;
         }
-        .settings-toggle:hover { text-decoration: underline; }
-        .two-col { display: flex; gap: 15px; }
-        .col { flex: 1; }
+
+        .settings-toggle:hover {
+            text-decoration: underline;
+        }
+
+        .settings-panel {
+            background: rgba(0,0,0,0.25);
+            border-radius: 14px;
+            padding: 18px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: none;
+            clear: both;
+        }
+
+        .two-col {
+            display: flex;
+            gap: 15px;
+        }
+
+        .col {
+            flex: 1;
+        }
 
         .toggle-container {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
         }
-        .toggle-label { font-size: 0.9rem; font-weight: 600; color: #00d2ff; }
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2ed573; } input:checked + .slider:before { transform: translateX(26px); }
 
-        .btn-group { display: flex; gap: 10px; }
-        button {
-            width: 100%; border: none; padding: 14px; border-radius: 10px;
-            font-size: 1rem; font-weight: 600; cursor: pointer;
-            transition: transform 0.2s; text-transform: uppercase; letter-spacing: 1px; color: white;
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--primary);
         }
-        #submitBtn {
-            background: linear-gradient(45deg, #00d2ff, #3a7bd5, #ff00de);
-            background-size: 200% 200%; animation: gradientAnim 3s ease infinite;
-        }
-        #checkBtn {
-            background: #6c5ce7;
-        }
-        #stopBtn { background: #ff4757; display: none; }
-        @keyframes gradientAnim { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-        button:disabled { background: #444; color: #aaa; cursor: not-allowed; animation: none; transform: none; box-shadow: none;}
-        .sheet-btn { background: #109869 !important; color: white !important; margin-top: 10px; display: block; width: 100%; text-decoration: none; text-align: center; padding: 10px; border-radius: 5px; font-weight: bold; }
-        .sheet-btn:hover { background: #0c7a54 !important; }
 
-        .progress-wrapper { margin-top: 20px; display: none; }
-        .global-status { 
-            text-align: center; margin-bottom: 5px; font-weight: 600; color: #f4b400; 
-            border: 1px solid rgba(244, 180, 0, 0.3); padding: 5px; border-radius: 5px; background: rgba(0,0,0,0.2);
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 22px;
         }
-        .timer-display {
-            text-align: center; font-family: 'Courier New', Courier, monospace; font-size: 1.3rem; color: #fff;
-            margin-bottom: 10px; font-weight: bold; text-shadow: 0 0 10px rgba(0, 210, 255, 0.5); letter-spacing: 2px;
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
-        .progress-container { width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-top: 5px;}
-        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #f4b400, #ff00de, #00d2ff); border-radius: 10px; transition: width 0.4s ease; }
-        
-        .log-area {
-            margin-top: 15px; max-height: 200px; overflow-y: auto; 
-            background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px;
-            font-size: 0.8rem; font-family: 'Consolas', monospace; display: none;
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--success);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Progress Area */
+        .progress-wrapper {
+            margin-top: 20px;
+            display: none;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            padding: 15px;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        .log-item { 
-            padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); 
-            display: flex; justify-content: flex-start; align-items: center; gap: 8px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .log-item a { color: inherit; text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.3); }
-        .log-item a:hover { color: white; border-bottom: 1px solid white; }
-        .log-icon { flex-shrink: 0; width: 15px; text-align: center; }
-        .log-success { color: #00d2ff; } 
-        .log-error { color: #ff4757; } 
-        .log-skip { color: #f4b400; } 
-        .log-info { color: #ddd; }
-        .log-warning { color: #ffa502; font-weight: bold; } 
 
+        .global-status {
+            text-align: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #f4b400;
+            border: 1px solid rgba(244, 180, 0, 0.25);
+            padding: 6px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            font-size: 0.85rem;
+        }
+
+        .timer-display {
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.4rem;
+            color: #fff;
+            margin-bottom: 12px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f4b400, var(--secondary), var(--primary));
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        /* Terminal Logs */
+        .log-area {
+            margin-top: 15px;
+            max-height: 180px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.45);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 0.8rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .log-item {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .log-item a {
+            color: var(--primary);
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(0, 210, 255, 0.4);
+        }
+
+        .log-item a:hover {
+            color: #fff;
+            border-bottom: 1px solid #fff;
+        }
+
+        .log-icon {
+            flex-shrink: 0;
+            width: 16px;
+            text-align: center;
+        }
+
+        .log-success { color: var(--primary); }
+        .log-error { color: var(--error); }
+        .log-skip { color: var(--warning); }
+        .log-info { color: #ccc; }
+        .log-warning { color: var(--warning); font-weight: bold; }
         .log-size { font-size: 0.7em; color: #888; margin-left: auto; padding-left: 10px; }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-        
-        .swal-table { width: 100%; font-size: 0.9em; margin-top: 10px; border-collapse: collapse; }
-        .swal-table td { padding: 5px; border-bottom: 1px solid #333; color: #ddd; text-align: left; }
-        .swal-table td:last-child { text-align: right; font-weight: bold; color: #fff; }
-
-        .result-box {
-            text-align: left; background: #222; padding: 15px; 
-            border-radius: 10px; margin-bottom: 10px; border: 1px solid #333;
+        /* Upload Tab */
+        .upload-zone {
+            border: 2px dashed rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
         }
-        .result-title { color: #00d2ff; font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; }
-        .result-info { font-size: 0.85rem; color: #ccc; }
-        
-        .hidden-input { display: none; margin-top: 10px; }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(0, 210, 255, 0.04);
+        }
+
+        .upload-zone-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        /* Tables & Lists */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            background: rgba(0,0,0,0.2);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-top: 15px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255,255,255,0.03);
+            color: var(--primary);
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: rgba(255, 255, 255, 0.85);
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .badge-success { background: rgba(46, 213, 115, 0.15); color: var(--success); }
+        .badge-error { background: rgba(255, 71, 87, 0.15); color: var(--error); }
+        .badge-warning { background: rgba(255, 165, 2, 0.15); color: var(--warning); }
+
+        .btn-table {
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-right: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .btn-table:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .btn-table-danger {
+            background: rgba(255, 71, 87, 0.15);
+            color: #ff4757;
+            border: 1px solid rgba(255, 71, 87, 0.3);
+        }
+
+        .btn-table-danger:hover {
+            background: var(--error);
+            color: #fff;
+        }
+
+        /* AI Tab chat layout */
+        .ai-chat-container {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .chat-history {
+            height: 220px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 12px;
+        }
+
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .chat-user {
+            background: var(--accent);
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-ai {
+            background: rgba(255, 255, 255, 0.08);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-row input {
+            flex: 1;
+        }
+
+        .chat-input-row button {
+            width: auto;
+            padding: 0 20px;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        /* Locks */
+        .lock-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--primary);
+            transition: all 0.3s;
+        }
+
+        .lock-indicator:hover {
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -172,383 +677,683 @@
 <div id="tsparticles"></div>
 
 <div class="container">
-    <h1>G-Drive Ultimate</h1>
-    <p class="subtitle">Smart Filter & Secure Cloning</p>
+    <div class="lock-indicator" id="lockBtn" onclick="promptPinChange()" title="Ubah PIN / Kunci Halaman">🔒</div>
     
-    <!-- AUTHENTICATION -->
-    <div class="form-group">
-        <label for="accessPin">PIN Akses (Wajib)</label>
-        <input type="password" id="accessPin" placeholder="Masukkan PIN Rahasia Anda" value="12345">
+    <header>
+        <h1>G-Drive Ultimate</h1>
+        <p class="subtitle">Smart Sync, Direct Upload & AI Power</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('clone')">📁 Cloner</button>
+        <button class="tab-btn" onclick="switchTab('upload')">📤 Uploader</button>
+        <button class="tab-btn" onclick="switchTab('search')">🔍 Search</button>
+        <button class="tab-btn" onclick="switchTab('ai')">🤖 AI Assistant</button>
+        <button class="tab-btn" onclick="switchTab('remote')">🔗 Remote Nodes</button>
+        <button class="tab-btn" onclick="switchTab('scheduler')">⏱️ Scheduler</button>
     </div>
 
-    <!-- NEW: DESTINATION INPUT -->
-    <div class="form-group">
-        <label for="destUrl">Folder Tujuan (Opsional)</label>
-        <input type="text" id="destUrl" placeholder="Link folder tujuan (jika kosong = default)">
-    </div>
-
-    <!-- NEW: SUBFOLDER INPUT -->
-    <div class="form-group">
-        <label for="newFolderName">Buat Folder Baru (Opsional)</label>
-        <input type="text" id="newFolderName" placeholder="Contoh: Gambarku (Semua file masuk ke sini)">
-    </div>
-
-    <div class="form-group">
-        <div class="header-row">
-            <label for="folderUrls">Daftar Link Sumber</label>
-            <button id="clearInputBtn" class="btn-clear">Clear</button>
-        </div>
-        <textarea id="folderUrls" placeholder="Tempel banyak link di sini (pisahkan dengan koma atau baris baru)..."></textarea>
-    </div>
-
-    <div class="settings-toggle" onclick="toggleSettings()">⚙️ Pengaturan Lanjutan</div>
-    <div class="settings-panel" id="settingsPanel">
+    <!-- CLONER TAB -->
+    <div class="tab-content active" id="tab-clone">
         <div class="form-group">
-            <label for="duplicateMode">Metode Duplikasi:</label>
-            <select id="duplicateMode" onchange="toggleRenameInput()">
-                <optgroup label="🔵 Mode Copy (File Sumber Tetap Aman)">
-                    <option value="copy_duplicate">Copy & Duplikat (Default)</option>
-                    <option value="copy_skip">Copy & Skip (Jika file ada, lewati)</option>
-                    <option value="copy_replace">Copy & Replace (Timpa file lama)</option>
-                </optgroup>
-                <optgroup label="✏️ Mode Rename (Ganti Nama Sumber)">
-                    <option value="rename_duplicate">Copy & Rename Sumber</option>
-                    <option value="rename_skip">Copy & Rename (Skip jika target ada)</option>
-                    <option value="rename_replace">Copy & Rename (Replace jika target ada)</option>
-                </optgroup>
-            </select>
+            <label for="destUrl">Folder Tujuan (Opsional)</label>
+            <input type="text" id="destUrl" placeholder="Link folder tujuan Google Drive (jika kosong = Default)">
+        </div>
+
+        <div class="form-group">
+            <label for="newFolderName">Buat Folder Baru (Opsional)</label>
+            <input type="text" id="newFolderName" placeholder="Contoh: Backup 2026 (Semua file akan dikelompokkan ke folder baru ini)">
+        </div>
+
+        <div class="form-group">
+            <div class="header-row">
+                <label for="folderUrls">Daftar Link Sumber Google Drive (Bisa Banyak)</label>
+                <button id="clearInputBtn" class="btn-clear" onclick="clearSourceUrls()">Clear</button>
+            </div>
+            <textarea id="folderUrls" placeholder="Tempel satu atau banyak link Google Drive di sini (pisahkan dengan koma atau baris baru)..."></textarea>
+        </div>
+
+        <div class="settings-toggle" onclick="toggleSettings()">⚙️ Pengaturan Lanjutan</div>
+        <div class="settings-panel" id="settingsPanel">
+            <div class="form-group">
+                <label for="duplicateMode">Metode Duplikasi:</label>
+                <select id="duplicateMode" onchange="toggleRenameInput()">
+                    <optgroup label="🔵 Mode Copy (File Sumber Tetap Aman)">
+                        <option value="copy_duplicate">Copy & Duplikat (Default)</option>
+                        <option value="copy_skip">Copy & Skip (Jika file sudah ada di target, lewati)</option>
+                        <option value="copy_replace">Copy & Replace (Timpa file target lama)</option>
+                    </optgroup>
+                    <optgroup label="✏️ Mode Rename (Ganti Nama Sumber - Perlu Akses Writer)">
+                        <option value="rename_duplicate">Copy & Rename Sumber</option>
+                        <option value="rename_skip">Copy & Rename (Skip jika target ada)</option>
+                        <option value="rename_replace">Copy & Rename (Replace jika target ada)</option>
+                    </optgroup>
+                </select>
+                
+                <div id="renameInputContainer" style="display: none; margin-top: 10px;">
+                    <input type="text" id="renamePrefix" placeholder="Tulis Prefix Baru (Default: [MOVED])">
+                    <div style="font-size:0.7em; color:#aaa; margin-top:2px;">*Nama file sumber akan diubah menjadi: <b>Prefix + NamaAsli</b></div>
+                </div>
+            </div>
             
-            <!-- INPUT UNTUK CUSTOM RENAME -->
-            <div id="renameInputContainer" class="hidden-input">
-                <input type="text" id="renamePrefix" placeholder="Tulis Prefix Baru (Default: [MOVED])">
-                <div style="font-size:0.7em; color:#aaa; margin-top:2px;">*Nama file sumber akan menjadi: <b>Prefix + NamaAsli</b></div>
+            <div class="two-col">
+                <div class="col">
+                    <label for="maxSize">Max Size (MB)</label>
+                    <input type="number" id="maxSize" placeholder="0 = Tanpa Batas" min="0">
+                </div>
+                <div class="col">
+                    <label for="ignoredExt">Abaikan Ekstensi</label>
+                    <input type="text" id="ignoredExt" placeholder="mp4, mkv, exe">
+                </div>
+            </div>
+            <div style="font-size:0.75em; color:#aaa; margin-top:5px; margin-bottom:15px;">*Pisahkan beberapa ekstensi dengan koma.</div>
+
+            <div class="form-group">
+                <label for="emailNotif">Email Laporan</label>
+                <input type="email" id="emailNotif" placeholder="nama.anda@gmail.com">
+            </div>
+
+            <div class="form-group">
+                <label for="configScriptUrl">Apps Script Web App URL Override</label>
+                <input type="text" id="configScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+                <div style="font-size:0.7em; color:#aaa; margin-top:2px;">*Biarkan kosong untuk menggunakan URL deployment default.</div>
             </div>
         </div>
-        
+
+        <div class="toggle-container">
+            <span class="toggle-label">Run in Background (Server-Side)</span>
+            <label class="switch">
+                <input type="checkbox" id="bgToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="btn-group">
+            <button id="checkBtn" class="action-btn btn-secondary" onclick="checkAllLinks()">🔍 Cek Semua Link</button>
+            <button id="submitBtn" class="action-btn btn-primary" onclick="startCloning()">Mulai Proses</button>
+            <button id="stopBtn" class="action-btn btn-danger" onclick="stopCloning()" style="display: none;">STOP 🛑</button>
+        </div>
+
+        <div class="progress-wrapper" id="progressWrapper">
+            <div class="global-status" id="globalStatus">Menunggu...</div>
+            <div class="timer-display" id="timerDisplay">00:00:00</div>
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#b8c6db;">
+                <span id="progressText">Progress...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="log-area" id="logArea"></div>
+        </div>
+    </div>
+
+    <!-- UPLOADER TAB -->
+    <div class="tab-content" id="tab-upload">
+        <div class="form-group">
+            <label for="uploadDest">Folder Tujuan Upload (Opsional)</label>
+            <input type="text" id="uploadDest" placeholder="ID atau Link Folder Drive (jika kosong = Default)">
+        </div>
+
+        <div class="upload-zone" id="dropZone" onclick="triggerFileInput()">
+            <div class="upload-zone-icon">📁</div>
+            <h3>Pilih file atau drop file di sini</h3>
+            <p style="font-size: 0.8rem; color:#aaa; margin-top: 5px;">File akan dikonversi ke Base64 dan diunggah langsung via API</p>
+            <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect(event)">
+        </div>
+
+        <div class="progress-wrapper" id="uploadProgressWrapper" style="display: none;">
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#b8c6db;">
+                <span id="uploadProgressText">Mengunggah file...</span>
+                <span id="uploadProgressPercent">0%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="uploadProgressBar"></div>
+            </div>
+        </div>
+
+        <div class="table-wrapper" id="uploadHistoryWrapper" style="display: none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama File</th>
+                        <th>Ukuran</th>
+                        <th>Folder Tujuan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="uploadHistoryList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SEARCH TAB -->
+    <div class="tab-content" id="tab-search">
+        <div class="two-col">
+            <div class="col" style="flex: 2;">
+                <label for="searchQuery">Nama File / Folder yang dicari</label>
+                <input type="text" id="searchQuery" placeholder="Ketik kata kunci nama file...">
+            </div>
+            <div class="col">
+                <label for="searchParent">ID Folder Induk</label>
+                <input type="text" id="searchParent" placeholder="root" value="root">
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="action-btn btn-primary" onclick="searchDrive()">🔍 Cari di Drive</button>
+        </div>
+
+        <div class="table-wrapper" style="margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Tipe</th>
+                        <th>Ukuran</th>
+                        <th>Diperbarui</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="searchResults">
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #888;">Belum ada pencarian. Masukkan query untuk memulai.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- AI ASSISTANT TAB -->
+    <div class="tab-content" id="tab-ai">
         <div class="two-col">
             <div class="col">
-                <label for="maxSize">Max Size (MB)</label>
-                <input type="number" id="maxSize" placeholder="0 = Unlimited" min="0">
+                <label for="geminiApiKey">Gemini API Key</label>
+                <input type="password" id="geminiApiKey" placeholder="Masukkan API Key Gemini Anda (Disimpan lokal)">
             </div>
             <div class="col">
-                <label for="ignoredExt">Abaikan Ekstensi</label>
-                <input type="text" id="ignoredExt" placeholder="mp4, mkv, exe">
+                <label for="aiDestFolder">Folder Output AI (Opsional)</label>
+                <input type="text" id="aiDestFolder" placeholder="Link/ID folder untuk menampung hasil generate">
             </div>
         </div>
-        <div style="font-size:0.7em; color:#aaa; margin-top:5px; margin-bottom:15px;">*Pisahkan ekstensi dengan koma.</div>
 
-        <div class="form-group">
-            <label for="emailNotif">Email Notifikasi</label>
-            <input type="email" id="emailNotif" placeholder="email.anda@gmail.com">
+        <!-- Mode 1: Generate File -->
+        <div style="margin-top: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
+            <h4 style="color: var(--primary); margin-bottom: 8px;">✨ Tulis File Baru dengan AI</h4>
+            <div class="two-col">
+                <div class="col" style="flex: 2;">
+                    <input type="text" id="aiFileName" placeholder="Nama file (contoh: rencana_kerja.txt)">
+                </div>
+                <div class="col">
+                    <button class="action-btn btn-secondary" onclick="generateFileAI()" style="padding: 10px;">Buat File</button>
+                </div>
+            </div>
+            <textarea id="aiPrompt" placeholder="Tulis instruksi konten file yang ingin dibuat..." style="margin-top: 10px; min-height: 60px;"></textarea>
+        </div>
+
+        <!-- Mode 2: Analisa Folder -->
+        <div style="margin-top: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
+            <h4 style="color: var(--secondary); margin-bottom: 8px;">📊 Analisa Isi Folder dengan AI</h4>
+            <div class="two-col">
+                <div class="col" style="flex: 2;">
+                    <input type="text" id="aiFolderToAnalyze" placeholder="ID/Link Folder Drive untuk dianalisis file-filenya">
+                </div>
+                <div class="col">
+                    <button class="action-btn btn-secondary" onclick="analyzeFolderAI()" style="padding: 10px; background: var(--secondary);">Mulai Analisis</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode 3: Chat App -->
+        <div class="ai-chat-container">
+            <h4 style="color: #f4b400; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">💬 Chat dengan Asisten Aplikasi</h4>
+            <div class="chat-history" id="chatHistory">
+                <div class="chat-bubble chat-ai">Halo! Saya adalah Asisten Cerdas G-Drive Ultimate. Ada yang bisa saya bantu terkait penggunaan aplikasi ini?</div>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="chatInput" placeholder="Tanyakan logika script, cara cloning, dll..." onkeydown="if(event.key === 'Enter') sendChatAI()">
+                <button class="action-btn btn-primary" onclick="sendChatAI()" style="padding: 10px 18px;">Kirim</button>
+            </div>
         </div>
     </div>
 
-    <div class="toggle-container">
-        <span class="toggle-label">Run in Background (Server-Side)</span>
-        <label class="switch">
-            <input type="checkbox" id="bgToggle">
-            <span class="slider"></span>
-        </label>
+    <!-- REMOTE NODES TAB -->
+    <div class="tab-content" id="tab-remote">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
+            <h4 style="color: var(--primary); margin-bottom: 10px;">Tambah Server Node Baru</h4>
+            <div class="two-col" style="margin-bottom: 10px;">
+                <div class="col">
+                    <input type="text" id="remoteLabel" placeholder="Label Node (contoh: Akun Cadangan B)">
+                </div>
+                <div class="col">
+                    <input type="text" id="remoteUrl" placeholder="URL Web App Google Apps Script Node">
+                </div>
+            </div>
+            <button class="action-btn btn-primary" onclick="addRemoteNode()">Tambah Node</button>
+        </div>
+
+        <div class="table-wrapper" style="margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Label</th>
+                        <th>Email Server</th>
+                        <th>Endpoint URL</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="remoteList">
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #888;">Memuat daftar server node...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="btn-group">
-        <button id="checkBtn">🔍 Cek Semua Link</button>
-        <button id="submitBtn">Mulai Proses</button>
-        <button id="stopBtn">STOP 🛑</button>
-    </div>
+    <!-- SCHEDULER TAB -->
+    <div class="tab-content" id="tab-scheduler">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
+            <h4 style="color: var(--primary); margin-bottom: 10px;">Buat Backup Terjadwal (Harian)</h4>
+            <div class="form-group">
+                <label for="schedLabel">Label Jadwal</label>
+                <input type="text" id="schedLabel" placeholder="Contoh: Backup Folder Portofolio Harian">
+            </div>
+            <div class="form-group">
+                <label for="schedSourceUrl">Link Folder Sumber</label>
+                <input type="text" id="schedSourceUrl" placeholder="Link folder Google Drive yang ingin disinkronkan">
+            </div>
+            <div class="form-group">
+                <label for="schedDestUrl">Folder Tujuan</label>
+                <input type="text" id="schedDestUrl" placeholder="Link/ID folder target (jika kosong = Default)">
+            </div>
+            
+            <div class="two-col">
+                <div class="col">
+                    <label for="schedMode">Metode Duplikasi</label>
+                    <select id="schedMode">
+                        <option value="copy_duplicate">Copy & Duplikat</option>
+                        <option value="copy_skip">Copy & Skip</option>
+                        <option value="copy_replace" selected>Copy & Replace (Timpa lama)</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="schedMaxBackups">Maksimal Riwayat Backup</label>
+                    <input type="number" id="schedMaxBackups" value="5" min="1">
+                </div>
+            </div>
+            <button class="action-btn btn-primary" onclick="addScheduleItem()" style="margin-top: 15px;">Simpan Jadwal</button>
+        </div>
 
-    <div class="progress-wrapper" id="progressWrapper">
-        <div class="global-status" id="globalStatus">Menunggu...</div>
-        <div class="timer-display" id="timerDisplay">00:00:00</div>
-        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#b8c6db;">
-            <span id="progressText">Progress...</span>
-            <span id="progressPercent">0%</span>
+        <div class="table-wrapper" style="margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama Tugas</th>
+                        <th>Sumber</th>
+                        <th>Tujuan</th>
+                        <th>Terakhir Jalan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleList">
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #888;">Memuat daftar penjadwal...</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
-        </div>
-        <div class="log-area" id="logArea"></div>
     </div>
 </div>
 
 <script>
-    // --- GANTI URL INI DENGAN URL WEB APP ANDA ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4RFANjPjkHL6nuMbNBtRUf3cRtQ5vz2DpIUF6mql8z4PMRgFxBKeTWVX_4pQUGENa/exec"; 
-    
-    const CONCURRENCY_LIMIT = 5; 
+    // URL Web App Google Apps Script default jika pengguna tidak melakukan override di settings
+    const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4RFANjPjkHL6nuMbNBtRUf3cRtQ5vz2DpIUF6mql8z4PMRgFxBKeTWVX_4pQUGENa/exec";
 
-    // UI References
-    const submitBtn = document.getElementById('submitBtn');
-    const checkBtn = document.getElementById('checkBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const bgToggle = document.getElementById('bgToggle');
-    const folderUrlsInput = document.getElementById('folderUrls');
-    const destUrlInput = document.getElementById('destUrl');
-    const newFolderNameInput = document.getElementById('newFolderName'); 
-    const clearInputBtn = document.getElementById('clearInputBtn');
-    const accessPinInput = document.getElementById('accessPin');
-    const settingsPanel = document.getElementById('settingsPanel');
-    const progressWrapper = document.getElementById('progressWrapper');
-    const progressBar = document.getElementById('progressBar');
-    const logArea = document.getElementById('logArea');
-    const globalStatus = document.getElementById('globalStatus');
-    const timerDisplay = document.getElementById('timerDisplay');
-    
-    // Setting Inputs
-    const duplicateModeInput = document.getElementById('duplicateMode');
-    const renameInputContainer = document.getElementById('renameInputContainer');
-    const renamePrefixInput = document.getElementById('renamePrefix');
-    const maxSizeInput = document.getElementById('maxSize');
-    const ignoredExtInput = document.getElementById('ignoredExt');
-    const emailNotifInput = document.getElementById('emailNotif');
+    // Muat atau Inisialisasi API Key & PIN dari LocalStorage
+    let userPin = localStorage.getItem('gdrive_pin') || '';
+    if (localStorage.getItem('gemini_api_key')) {
+        document.getElementById('geminiApiKey').value = localStorage.getItem('gemini_api_key');
+    }
 
+    // Variabel operasional Cloner
     let isStopRequested = false;
     let timerInterval;
     let currentSessionLogs = [];
+    const CONCURRENCY_LIMIT = 5;
 
-    function toggleSettings() {
-        settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+    // Inisialisasi Halaman
+    window.addEventListener('load', () => {
+        initParticles();
+        checkAndPromptPin();
+        loadSavedSettings();
+    });
+
+    function getScriptUrl() {
+        const overrideUrl = document.getElementById('configScriptUrl').value.trim();
+        return overrideUrl || localStorage.getItem('gdrive_script_url') || DEFAULT_SCRIPT_URL;
     }
-    
-    function toggleRenameInput() {
-        const mode = duplicateModeInput.value;
-        if (mode.startsWith('rename_')) {
-            renameInputContainer.style.display = 'block';
-        } else {
-            renameInputContainer.style.display = 'none';
+
+    function checkAndPromptPin() {
+        if (!userPin) {
+            promptPinChange(true);
         }
     }
 
-    clearInputBtn.addEventListener('click', () => { folderUrlsInput.value = ''; folderUrlsInput.focus(); });
-
-    // Particles (Visual)
-    if (typeof tsParticles !== 'undefined') {
-        tsParticles.load("tsparticles", {
-            fpsLimit: 60,
-            particles: {
-                number: { value: 20, density: { enable: true, area: 800 } },
-                shape: { type: ["char", "circle"], character: [ { value: ["📂", "💾", "🚀", "✨", "📄"], font: "Verdana", weight: "400" } ] },
-                color: { value: ["#4285F4", "#DB4437", "#F4B400", "#0F9D58", "#ffffff"] },
-                opacity: { value: 0.4, random: true }, size: { value: { min: 10, max: 20 }, random: true },
-                move: { enable: true, speed: 1, direction: "none", random: true, outModes: { default: "out" } }
+    function promptPinChange(isFirstLoad = false) {
+        Swal.fire({
+            title: isFirstLoad ? '🔐 Selamat Datang' : '🔐 Ubah PIN Akses',
+            text: 'Masukkan PIN akses keamanan aplikasi Anda:',
+            input: 'password',
+            inputPlaceholder: 'Masukkan PIN Anda...',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocorrect: 'off'
             },
-            emitters: { rate: { delay: 3, quantity: 1 }, position: { x: 50, y: 50 }, particles: { shape: { type: "char", character: { value: ["✉️", "📦"], font: "Verdana" } }, size: { value: { min: 60, max: 90 } }, opacity: { value: 1 }, move: { enable: true, speed: 1, outModes: { default: "destroy" } } } }
+            showCancelButton: !isFirstLoad,
+            confirmButtonText: 'Verifikasi',
+            cancelButtonText: 'Batal',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            background: '#111',
+            color: '#fff',
+            confirmButtonColor: '#00d2ff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (result.value) {
+                    userPin = result.value;
+                    localStorage.setItem('gdrive_pin', userPin);
+                    Swal.fire({ icon: 'success', title: 'PIN Disimpan!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
+                    // Refresh data remote dan scheduler
+                    loadRemoteNodes();
+                    loadScheduleList();
+                } else {
+                    Swal.fire({ icon: 'error', title: 'PIN tidak boleh kosong', background: '#111', color: '#fff' }).then(() => {
+                        checkAndPromptPin();
+                    });
+                }
+            }
         });
     }
 
-    // --- CHECK FOLDER FUNCTION (MULTI-URL SUPPORT) ---
-    checkBtn.addEventListener('click', async () => {
-        const rawText = folderUrlsInput.value;
+    function loadSavedSettings() {
+        const savedUrl = localStorage.getItem('gdrive_script_url') || '';
+        document.getElementById('configScriptUrl').value = savedUrl;
+        
+        // Simpan API Key Gemini lokal jika diubah
+        document.getElementById('geminiApiKey').addEventListener('change', (e) => {
+            localStorage.setItem('gemini_api_key', e.target.value.trim());
+        });
+
+        // Simpan Script URL lokal jika diubah
+        document.getElementById('configScriptUrl').addEventListener('change', (e) => {
+            localStorage.setItem('gdrive_script_url', e.target.value.trim());
+        });
+    }
+
+    // Tab switcher
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.textContent.toLowerCase().includes(tabId));
+        if(activeBtn) activeBtn.classList.add('active');
+        
+        const activeContent = document.getElementById(`tab-${tabId}`);
+        if(activeContent) activeContent.classList.add('active');
+
+        // Trigger load data spesifik tab jika diperlukan
+        if(tabId === 'remote') loadRemoteNodes();
+        if(tabId === 'scheduler') loadScheduleList();
+    }
+
+    // Toggle advanced settings
+    function toggleSettings() {
+        const panel = document.getElementById('settingsPanel');
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function toggleRenameInput() {
+        const mode = document.getElementById('duplicateMode').value;
+        const renameContainer = document.getElementById('renameInputContainer');
+        renameContainer.style.display = mode.startsWith('rename_') ? 'block' : 'none';
+    }
+
+    function clearSourceUrls() {
+        const input = document.getElementById('folderUrls');
+        input.value = '';
+        input.focus();
+    }
+
+    // Request helper
+    async function sendRequest(payload) {
+        const url = getScriptUrl();
+        const response = await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({ ...payload, pin: userPin }),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+        return await response.json();
+    }
+
+    // --- TAB 1: CLONER ENGINE ---
+    async function checkAllLinks() {
+        const rawText = document.getElementById('folderUrls').value;
         const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
-        const pin = accessPinInput.value;
 
-        if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
-        if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan setidaknya satu link untuk dicek.' }); return; }
+        if (!userPin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda di bagian kanan atas.' }); return; }
+        if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan setidaknya satu link Google Drive.' }); return; }
 
-        Swal.fire({ title: `Memindai ${urls.length} Link...`, text: 'Sedang mengambil data...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        Swal.fire({
+            title: `Memindai ${urls.length} Link...`,
+            text: 'Membaca detail dari server Google...',
+            allowOutsideClick: false,
+            background: '#111',
+            color: '#fff',
+            didOpen: () => { Swal.showLoading(); }
+        });
 
         let resultsHTML = "";
-        let hasError = false;
-
         for (let i = 0; i < urls.length; i++) {
             try {
-                const res = await sendRequest({ action: 'check_stats', url: urls[i], pin: pin });
-                
+                const res = await sendRequest({ action: 'check_stats', url: urls[i] });
                 if (res.status === 'success') {
-                    // Cek Permission Read Only
-                    const accessColor = res.canEdit ? '#2ed573' : '#ff4757'; // Green if Edit, Red if ReadOnly
-                    const accessWeight = res.canEdit ? 'normal' : 'bold';
-
+                    const accessColor = res.access === 'Writer' ? '#2ed573' : (res.access === 'Viewer' ? '#ff4757' : '#ffa502');
                     resultsHTML += `
-                        <div class="result-box">
-                            <div class="result-title">${i+1}. ${res.name} (${res.type === 'folder' ? '📁 Folder' : '📄 File'})</div>
-                            <div class="result-info">
-                                📄 File: ${res.stats.files} | 
-                                💾 Size: <span style="color:#2ed573">${res.stats.size}</span><br>
-                                🔒 Akses: <span style="color:${accessColor}; font-weight:${accessWeight}">${res.access}</span><br>
-                                🤖 Running As: <span style="color:#fff">${res.scriptUser}</span><br>
-                                👑 Owner File: <span style="color:#ccc">${res.ownerEmail}</span>
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-bottom: 10px; text-align: left;">
+                            <div style="font-weight:600; color:var(--primary); margin-bottom: 4px;">${i+1}. ${res.name} (${res.type === 'folder' ? '📁 Folder' : '📄 File'})</div>
+                            <div style="font-size:0.8rem; color:#ccc; line-height: 1.5;">
+                                📄 File: ${res.stats.files} | 💾 Size: <span style="color:#2ed573">${res.stats.size}</span><br>
+                                🔒 Akses: <span style="color:${accessColor}; font-weight:bold;">${res.access}</span><br>
+                                👑 Owner: <span style="color:#fff">${res.ownerEmail}</span>
                             </div>
                         </div>
                     `;
                 } else {
-                    resultsHTML += `<div class="result-box" style="border-color:#ff4757"><div class="result-title" style="color:#ff4757">${i+1}. Gagal</div><div class="result-info">${res.message}</div></div>`;
-                    hasError = true;
+                    resultsHTML += `<div style="border: 1px solid var(--error); padding: 12px; border-radius: 10px; margin-bottom: 10px; text-align: left;"><div style="color:var(--error); font-weight:600;">${i+1}. Gagal</div><div style="font-size:0.8rem; color:#ccc;">${res.message}</div></div>`;
                 }
             } catch (e) {
-                resultsHTML += `<div class="result-box" style="border-color:#ff4757"><div class="result-title" style="color:#ff4757">${i+1}. Error</div><div class="result-info">${e.message}</div></div>`;
+                resultsHTML += `<div style="border: 1px solid var(--error); padding: 12px; border-radius: 10px; margin-bottom: 10px; text-align: left;"><div style="color:var(--error); font-weight:600;">${i+1}. Error</div><div style="font-size:0.8rem; color:#ccc;">${e.message}</div></div>`;
             }
         }
 
         Swal.fire({
-            title: '📊 Hasil Scan Lengkap',
+            title: '📊 Hasil Analisa Link',
             html: `<div style="max-height:300px; overflow-y:auto; padding-right:5px;">${resultsHTML}</div>`,
-            background: '#111', color: '#fff', confirmButtonText: 'Tutup', width: '600px'
+            background: '#111',
+            color: '#fff',
+            confirmButtonText: 'Tutup',
+            confirmButtonColor: 'var(--accent)',
+            width: '600px'
         });
-    });
+    }
 
-    // --- MAIN COPY LOGIC ---
-
-    stopBtn.addEventListener('click', async () => {
-        isStopRequested = true; stopBtn.disabled = true; stopBtn.textContent = "Stopping...";
-        const pin = accessPinInput.value;
-        if (bgToggle.checked) {
-            addLog("Mengirim sinyal stop ke server...", "info");
-            try { const res = await sendRequest({ action: 'stop_background', pin: pin }); addLog(res.message, "success"); } catch (e) { addLog("Gagal stop: " + e.message, "error"); }
-        } else addLog("Menghentikan proses browser...", "info");
-        stopTimer();
-    });
-
-    submitBtn.addEventListener('click', async () => {
-        const rawText = folderUrlsInput.value;
+    async function startCloning() {
+        const rawText = document.getElementById('folderUrls').value;
         const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
-        const pin = accessPinInput.value;
-        const destUrl = destUrlInput.value.trim();
-        const newFolderName = newFolderNameInput.value.trim();
+        const destUrl = document.getElementById('destUrl').value.trim();
+        const newFolderName = document.getElementById('newFolderName').value.trim();
+        const duplicateMode = document.getElementById('duplicateMode').value;
         
-        // Capture Custom Rename
-        let renamePrefix = renamePrefixInput.value.trim();
-        if (renamePrefix === "") renamePrefix = "[MOVED] "; // Default value if empty
-        // Ensure there is a space at the end if user didn't put one (optional but nice)
+        let renamePrefix = document.getElementById('renamePrefix').value.trim();
+        if (renamePrefix === "") renamePrefix = "[MOVED] ";
         if (!renamePrefix.endsWith(" ") && !renamePrefix.endsWith("_") && !renamePrefix.endsWith("-")) renamePrefix += " ";
 
-        if (!pin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda.' }); return; }
-        if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder!' }); return; }
+        if (!userPin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses keamanan Anda.' }); return; }
+        if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder Google Drive terlebih dahulu.' }); return; }
 
-        // Gather Config
         const config = {
-            mode: duplicateModeInput.value,
+            mode: duplicateMode,
             destUrl: destUrl,
             newFolderName: newFolderName,
-            renamePrefix: renamePrefix, // Send prefix to backend
+            renamePrefix: renamePrefix,
             filters: {
-                maxSizeMB: parseInt(maxSizeInput.value) || 0,
-                ignoredExt: ignoredExtInput.value
+                maxSizeMB: parseInt(document.getElementById('maxSize').value) || 0,
+                ignoredExt: document.getElementById('ignoredExt').value
             },
-            email: emailNotifInput.value
+            email: document.getElementById('emailNotif').value
         };
 
         if (config.mode.startsWith('rename_')) {
             const confirmMove = await Swal.fire({
                 title: 'Konfirmasi Rename?',
-                text: `File sumber akan diganti namanya dengan awalan "${renamePrefix}". Pastikan Anda punya akses Editor!`,
+                text: `File sumber akan diganti namanya dengan awalan "${renamePrefix}". Pastikan Anda memiliki akses Editor/Writer di folder sumber!`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
+                confirmButtonColor: 'var(--error)',
+                cancelButtonColor: 'var(--accent)',
                 confirmButtonText: 'Ya, Lanjutkan!',
-                cancelButtonText: 'Batal'
+                cancelButtonText: 'Batal',
+                background: '#111',
+                color: '#fff'
             });
             if (!confirmMove.isConfirmed) return;
         }
 
-        isStopRequested = false; setUIState('running'); clearLog(); startTimer();
+        isStopRequested = false;
+        setUIState('running');
+        clearLog();
+        startTimer();
         
-        // Reset logs
         currentSessionLogs = [];
-
-        addLog(`🔐 PIN: OK | Mode: ${config.mode.toUpperCase()}`, 'info');
-        if (destUrl) addLog(`📂 Tujuan Custom: Deteksi URL...`, 'info');
-        else addLog(`📂 Tujuan: Default Folder`, 'info');
+        addLog(`🔐 Autentikasi PIN Berhasil | Mode: ${config.mode.toUpperCase()}`, 'info');
         
-        if (newFolderName) addLog(`📁 Sub-folder Baru: "${newFolderName}"`, 'info');
-        if (config.mode.startsWith('rename_')) addLog(`✏️ Rename Prefix: "${renamePrefix}"`, 'info');
+        if (destUrl) addLog(`📂 Folder Target Kustom Dideteksi`, 'info');
+        else addLog(`📂 Menggunakan Folder Target Default`, 'info');
+        
+        if (newFolderName) addLog(`📁 Sub-folder Baru Akan Dibuat: "${newFolderName}"`, 'info');
+        if (config.mode.startsWith('rename_')) addLog(`✏️ Rename Prefix Sumber: "${renamePrefix}"`, 'info');
 
-        if (bgToggle.checked) {
+        const bgMode = document.getElementById('bgToggle').checked;
+        if (bgMode) {
             try {
-                addLog("Mengirim job ke server...", "info");
+                addLog("Mengirim instruksi pekerjaan latar belakang (Server-Side)...", "info");
                 const res = await sendRequest({ 
                     action: 'start_background_multi', 
                     urls: urls, 
-                    pin: pin,
                     ...config 
                 });
                 
                 if (res.status === 'success') {
-                    addLog("✅ " + res.message, "success"); globalStatus.textContent = "BERJALAN DI SERVER"; 
-                    if (typeof launchConfetti === 'function') launchConfetti();
-                    Swal.fire({ icon: 'success', title: 'Started!', text: 'Proses berjalan di background. Email akan dikirim saat selesai.', confirmButtonText: 'Oke' });
+                    addLog("✅ " + res.message, "success");
+                    document.getElementById('globalStatus').textContent = "BERJALAN DI SERVER (BACKGROUND)"; 
+                    launchConfetti();
+                    Swal.fire({ icon: 'success', title: 'Berjalan di Background!', text: 'Anda dapat menutup halaman ini. Laporan akan dikirim ke email saat selesai.', confirmButtonText: 'Oke', background: '#111', color: '#fff' });
+                    setUIState('stopped');
+                    stopTimer();
                 } else { 
-                    addLog("❌ Gagal: " + res.message, "error"); setUIState('stopped'); stopTimer(); 
-                    if(res.message.includes("PIN")) Swal.fire({ icon: 'error', title: 'Akses Ditolak', text: 'PIN Salah!' });
+                    addLog("❌ Gagal memulai: " + res.message, "error");
+                    setUIState('stopped');
+                    stopTimer(); 
                 }
-            } catch (e) { addLog("❌ Error: " + e.message, "error"); setUIState('stopped'); stopTimer(); }
+            } catch (e) {
+                addLog("❌ Error request server: " + e.message, "error");
+                setUIState('stopped');
+                stopTimer();
+            }
         } else {
-            await runForegroundQueue(urls, pin, config);
+            await runForegroundQueue(urls, config);
         }
-    });
+    }
 
-    async function runForegroundQueue(urls, pin, config) {
-        let successCount = 0; let failCount = 0; let grandTotalFiles = 0; let grandTotalBytes = 0; let resultLinks = [];
+    async function runForegroundQueue(urls, config) {
+        let successCount = 0;
+        let failCount = 0;
+        let grandTotalFiles = 0;
+        let grandTotalBytes = 0;
+        let resultLinks = [];
 
         for (let i = 0; i < urls.length; i++) {
             if (isStopRequested) break;
             const currentUrl = urls[i];
-            globalStatus.textContent = `Memproses Link ${i + 1} dari ${urls.length}`;
-            updateProgress(0, "Inisialisasi...");
+            document.getElementById('globalStatus').textContent = `Memproses Link ${i + 1} dari ${urls.length}`;
+            updateProgress(0, "Inisialisasi koneksi...");
 
             try {
-                addLog(`▶ [${i+1}/${urls.length}] Connecting...`, 'info');
-                const result = await processSingleFolder(currentUrl, pin, config);
+                addLog(`▶ [Link ${i+1}/${urls.length}] Menghubungkan ke Drive...`, 'info');
+                const result = await processSingleFolder(currentUrl, config);
                 
                 const itemType = result.type === 'file' ? 'File' : 'Folder';
                 
                 if (result.files > 0 || result.type === 'file') {
                      successCount++;
-                     addLog(`✅ Selesai: ${itemType} "${result.name}" (${result.files} processed).`, 'success');
+                     addLog(`✅ Sukses: ${itemType} "${result.name}" (${result.files} file disalin).`, 'success');
                      if (result.url) resultLinks.push({ name: `${itemType}: ${result.name}`, url: result.url });
                 } else {
-                     addLog(`⚠️ Selesai: ${result.name} (0 file disalin/kena filter).`, 'info');
+                     addLog(`⚠️ Selesai: ${result.name} (0 file disalin / semua terfilter).`, 'info');
                 }
                 
                 grandTotalFiles += result.files; 
                 grandTotalBytes += parseBytesToNum(result.sizeStr);
-
             } catch (error) {
-                failCount++; addLog(`❌ Gagal: ${error.message}`, 'error');
-                if(error.message.includes("PIN")) { setUIState('stopped'); stopTimer(); return; }
+                failCount++;
+                addLog(`❌ Gagal menyalin: ${error.message}`, 'error');
+                if(error.message.includes("PIN") || error.message.includes("Akses Ditolak")) {
+                    setUIState('stopped');
+                    stopTimer();
+                    return;
+                }
             }
         }
 
-        setUIState('stopped'); stopTimer();
+        setUIState('stopped');
+        stopTimer();
         
         if (isStopRequested) {
-            addLog("⛔ Proses dihentikan.", "error"); globalStatus.textContent = "DIHENTIKAN";
+            addLog("⛔ Proses dihentikan paksa oleh pengguna.", "error");
+            document.getElementById('globalStatus').textContent = "DIHENTIKAN";
         } else {
-            globalStatus.textContent = "SELESAI"; 
-            
-            addLog("📝 Mencatat Log...", "info");
+            document.getElementById('globalStatus').textContent = "SELESAI"; 
+            addLog("📝 Mengirim laporan ringkasan...", "info");
             try {
                 const reportRes = await sendRequest({
                     action: 'send_report',
-                    pin: pin,
                     email: config.email || "", 
                     urls: urls,
                     stats: { success: successCount, fail: failCount, totalFiles: grandTotalFiles, totalSize: formatBytes(grandTotalBytes) },
                     details: currentSessionLogs 
                 });
                 
-                if (reportRes.emailStatus === 'sent') {
-                    addLog("📧 Email berhasil terkirim!", "success");
-                } else {
-                    addLog("✅ Log tersimpan.", "success");
+                if (reportRes.status === 'success') {
+                    addLog("📧 Laporan berhasil dicatat di Server-Side!", "success");
                 }
-
-                if (typeof launchConfetti === 'function') launchConfetti();
-                // Pass sheetUrl to showFinalReport
+                launchConfetti();
                 showFinalReport(successCount, failCount, grandTotalFiles, grandTotalBytes, resultLinks, reportRes.sheetUrl);
-
-            } catch(e) { console.error("Gagal lapor: ", e); }
+            } catch(e) {
+                console.error("Gagal mengirim laporan akhir: ", e);
+                showFinalReport(successCount, failCount, grandTotalFiles, grandTotalBytes, resultLinks, null);
+            }
         }
     }
 
-    async function processSingleFolder(url, pin, config) {
+    async function processSingleFolder(url, config) {
         if (isStopRequested) return { files: 0, sizeStr: "0 B", url: null, type: 'unknown' };
         
-        const initRes = await sendRequest({ action: 'initialize', url: url, name: "", pin: pin, ...config });
+        const initRes = await sendRequest({ action: 'initialize', url: url, name: "", ...config });
         if (initRes.status !== 'success') throw new Error(initRes.message);
 
-        const jobId = initRes.jobId; const total = initRes.totalFiles;
+        const jobId = initRes.jobId;
+        const total = initRes.totalFiles;
         const sourceName = initRes.sourceName || "Item";
         let targetUrl = initRes.targetUrl; 
         const sourceType = initRes.type || 'folder';
@@ -558,17 +1363,21 @@
 
         if (total === 0) return { files: 0, sizeStr: "0 B", url: targetUrl, name: sourceName, type: sourceType };
 
-        let finalProcessed = 0; let finalSizeStr = "0 B"; let isFinished = false; let workers = [];
+        let finalProcessed = 0;
+        let finalSizeStr = "0 B";
+        let isFinished = false;
+        let workers = [];
         
         const workerTask = async () => {
             while (!isFinished && !isStopRequested) {
                 try {
-                    const res = await sendRequest({ action: 'process_batch', jobId: jobId, pin: pin });
+                    const res = await sendRequest({ action: 'process_batch', jobId: jobId });
                     if (res.status !== 'success') throw new Error(res.message);
                     
                     const p = res.progress;
                     updateProgress(p.percent, `${actionText}: ${p.processed}/${p.total}`);
-                    finalProcessed = p.processed; finalSizeStr = p.currentSize;
+                    finalProcessed = p.processed;
+                    finalSizeStr = p.currentSize;
 
                     if (res.processedList && res.processedList.length > 0) {
                         res.processedList.forEach(item => {
@@ -582,7 +1391,6 @@
                             let displayInfo = item.info; 
                             if(item.status === 'warning') displayInfo = "⚠️ " + item.info;
 
-                            // Simpan ke log global untuk dikirim nanti
                             currentSessionLogs.push({
                                 name: item.name,
                                 url: (item.url && item.url !== '#') ? item.url : 'No Link',
@@ -595,7 +1403,9 @@
                     }
 
                     if (res.action === 'complete') isFinished = true;
-                } catch (e) { await new Promise(r => setTimeout(r, 2000)); }
+                } catch (e) {
+                    await new Promise(r => setTimeout(r, 2000));
+                }
             }
         };
 
@@ -605,78 +1415,699 @@
         return { files: finalProcessed, sizeStr: finalSizeStr, url: targetUrl, name: sourceName, type: sourceType };
     }
 
+    function stopCloning() {
+        isStopRequested = true;
+        const stopBtn = document.getElementById('stopBtn');
+        stopBtn.disabled = true;
+        stopBtn.textContent = "Menghentikan...";
+        
+        if (document.getElementById('bgToggle').checked) {
+            addLog("Mengirim sinyal penghentian ke server...", "info");
+            sendRequest({ action: 'stop_background' }).then(res => {
+                addLog("✅ Background task dihentikan: " + res.message, "success");
+            }).catch(err => {
+                addLog("Gagal stop: " + err.message, "error");
+            });
+        } else {
+            addLog("Proses antrean client dihentikan.", "info");
+        }
+        stopTimer();
+    }
+
     function showFinalReport(success, fail, totalFiles, totalBytes, links, sheetUrl) {
         let linksHtml = "";
         if (links.length > 0) {
-            linksHtml += `<div class="result-btn-container" style="margin-top:15px; border-top:1px solid #333; padding-top:10px;">`;
-            linksHtml += `<p style="font-size:0.8em; color:#aaa; margin-bottom:5px;">Hasil Copy (Folder Induk):</p>`
+            linksHtml += `<div style="margin-top:15px; border-top:1px solid #333; padding-top:10px; text-align:left;">`;
+            linksHtml += `<p style="font-size:0.8em; color:#aaa; margin-bottom:8px;">Hasil Kloning (Folder Induk):</p>`;
             links.forEach(link => {
-                linksHtml += `<a href="${link.url}" target="_blank" class="result-link-btn">${link.name}</a>`;
+                linksHtml += `<a href="${link.url}" target="_blank" style="display:block; background:rgba(0,210,255,0.15); border:1px solid rgba(0,210,255,0.3); color:#fff; text-decoration:none; padding:8px 12px; border-radius:8px; margin-bottom:6px; font-size:0.8rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">🔗 ${link.name}</a>`;
             });
             linksHtml += `</div>`;
         }
 
         let sheetBtnHtml = "";
         if (sheetUrl) {
-            sheetBtnHtml = `<a href="${sheetUrl}" target="_blank" class="sheet-btn">📂 Buka Log Sheet</a>`;
+            sheetBtnHtml = `<a href="${sheetUrl}" target="_blank" style="background:#2ed573; color:white; margin-top:10px; display:block; width:100%; text-decoration:none; text-align:center; padding:12px; border-radius:10px; font-weight:bold; font-size:0.9rem;">📂 Buka Log Spreadsheet</a>`;
         }
 
         Swal.fire({
-            title: '🎉 Selesai 🎉',
+            title: '🎉 Proses Selesai!',
             html: `
-                <table class="swal-table">
-                    <tr><td>Link Sumber</td><td>${success + fail}</td></tr>
-                    <tr><td>Total Item</td><td>${totalFiles}</td></tr>
-                    <tr><td>Total Ukuran</td><td>${formatBytes(totalBytes)}</td></tr>
-                    <tr><td>Durasi</td><td>${timerDisplay.textContent}</td></tr>
+                <table style="width:100%; font-size:0.85em; margin-top:10px; border-collapse:collapse; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25);">
+                    <tr style="border-bottom:1px solid #333;"><td style="padding:8px; text-align:left; color:#ccc;">Sukses Link</td><td style="padding:8px; text-align:right; font-weight:bold;">${success}</td></tr>
+                    <tr style="border-bottom:1px solid #333;"><td style="padding:8px; text-align:left; color:#ccc;">Gagal Link</td><td style="padding:8px; text-align:right; font-weight:bold; color:var(--error);">${fail}</td></tr>
+                    <tr style="border-bottom:1px solid #333;"><td style="padding:8px; text-align:left; color:#ccc;">Total File Disalin</td><td style="padding:8px; text-align:right; font-weight:bold;">${totalFiles}</td></tr>
+                    <tr style="border-bottom:1px solid #333;"><td style="padding:8px; text-align:left; color:#ccc;">Total Ukuran</td><td style="padding:8px; text-align:right; font-weight:bold; color:var(--success);">${formatBytes(totalBytes)}</td></tr>
+                    <tr><td style="padding:8px; text-align:left; color:#ccc;">Durasi</td><td style="padding:8px; text-align:right; font-weight:bold;">${document.getElementById('timerDisplay').textContent}</td></tr>
                 </table>
                 ${linksHtml}
                 ${sheetBtnHtml}
             `,
-            background: '#111116', color: '#fff', 
-            confirmButtonText: 'Tutup', confirmButtonColor: '#ff00de',
+            background: '#111116',
+            color: '#fff', 
+            confirmButtonText: 'Selesai',
+            confirmButtonColor: '#ff00de',
             allowOutsideClick: false
         });
     }
 
-    // --- UTILS ---
-    function launchConfetti() { if (typeof confetti !== 'undefined') { var d = 3000; var e = Date.now() + d; var i = setInterval(function() { if (Date.now() > e) return clearInterval(i); confetti({ particleCount: 50, spread: 360, startVelocity: 30, origin: { x: Math.random(), y: Math.random() - 0.2 } }); }, 250); } }
-    function parseBytesToNum(sizeStr) { if (!sizeStr) return 0; const units = { 'Bytes': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4 }; const parts = sizeStr.split(' '); return parseFloat(parts[0]) * (units[parts[1]] || 1); }
-    function formatBytes(bytes) { if (bytes === 0) return '0 Bytes'; const i = Math.floor(Math.log(bytes) / Math.log(1024)); return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + ['Bytes', 'KB', 'MB', 'GB', 'TB'][i]; }
-    async function sendRequest(payload) { const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); return await response.json(); }
-    function setUIState(state) {
-        if (state === 'running') {
-            submitBtn.style.display = 'none'; checkBtn.style.display = 'none'; stopBtn.style.display = 'block'; stopBtn.disabled = false; stopBtn.textContent = "STOP 🛑";
-            folderUrlsInput.disabled = true; destUrlInput.disabled = true; bgToggle.disabled = true; accessPinInput.disabled = true;
-            progressWrapper.style.display = 'block'; logArea.style.display = 'block';
-        } else {
-            submitBtn.style.display = 'block'; checkBtn.style.display = 'block'; stopBtn.style.display = 'none'; folderUrlsInput.disabled = false; destUrlInput.disabled = false; bgToggle.disabled = false; accessPinInput.disabled = false;
+    // --- TAB 2: UPLOADER ENGINE ---
+    function triggerFileInput() {
+        document.getElementById('fileInput').click();
+    }
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        uploadFile(file);
+    }
+
+    // Drag and drop setup
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--primary)';
+        dropZone.style.background = 'rgba(0, 210, 255, 0.08)';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'rgba(255,255,255,0.15)';
+        dropZone.style.background = 'rgba(0,0,0,0.2)';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'rgba(255,255,255,0.15)';
+        dropZone.style.background = 'rgba(0,0,0,0.2)';
+        
+        const file = e.dataTransfer.files[0];
+        if(file) uploadFile(file);
+    });
+
+    function uploadFile(file) {
+        const dest = document.getElementById('uploadDest').value.trim();
+        const reader = new FileReader();
+        
+        document.getElementById('uploadProgressWrapper').style.display = 'block';
+        document.getElementById('uploadProgressBar').style.width = '0%';
+        document.getElementById('uploadProgressPercent').textContent = '0%';
+        document.getElementById('uploadProgressText').textContent = `Membaca file "${file.name}"...`;
+
+        reader.onload = async function(e) {
+            document.getElementById('uploadProgressText').textContent = `Mengirim file ke Google Drive...`;
+            document.getElementById('uploadProgressBar').style.width = '50%';
+            document.getElementById('uploadProgressPercent').textContent = '50%';
+            
+            try {
+                const base64 = e.target.result;
+                const res = await sendRequest({
+                    action: 'direct_upload',
+                    destId: dest,
+                    fileData: base64,
+                    mimeType: file.type,
+                    fileName: file.name
+                });
+
+                if (res.status === 'success') {
+                    document.getElementById('uploadProgressBar').style.width = '100%';
+                    document.getElementById('uploadProgressPercent').textContent = '100%';
+                    document.getElementById('uploadProgressText').textContent = `Upload Berhasil!`;
+                    
+                    Swal.fire({ icon: 'success', title: 'File Terunggah!', text: `File "${file.name}" berhasil diunggah ke Google Drive.`, background: '#111', color: '#fff' });
+                    
+                    // Tambahkan ke history
+                    addUploadToHistory(res.fileName, res.size, res.folderName, res.fileUrl);
+                } else {
+                    throw new Error(res.message);
+                }
+            } catch (err) {
+                document.getElementById('uploadProgressText').textContent = `Upload Gagal: ${err.message}`;
+                Swal.fire({ icon: 'error', title: 'Upload Gagal', text: err.message, background: '#111', color: '#fff' });
+            } finally {
+                setTimeout(() => {
+                    document.getElementById('uploadProgressWrapper').style.display = 'none';
+                }, 3000);
+            }
+        };
+
+        reader.onerror = function() {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal membaca berkas lokal.', background: '#111', color: '#fff' });
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    function addUploadToHistory(name, size, folder, url) {
+        document.getElementById('uploadHistoryWrapper').style.display = 'block';
+        const tbody = document.getElementById('uploadHistoryList');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><a href="${url}" target="_blank" style="color:var(--primary); text-decoration:none;">🔗 ${name}</a></td>
+            <td>${size}</td>
+            <td>${folder}</td>
+            <td><button class="btn-table" onclick="window.open('${url}', '_blank')">Lihat</button></td>
+        `;
+        tbody.prepend(tr);
+    }
+
+    // --- TAB 3: SEARCH ENGINE ---
+    async function searchDrive() {
+        const query = document.getElementById('searchQuery').value.trim();
+        const parentId = document.getElementById('searchParent').value.trim();
+
+        if (!query) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan nama file yang ingin dicari.', background: '#111', color: '#fff' }); return; }
+
+        Swal.fire({
+            title: 'Mencari...',
+            text: 'Menghubungi server Google Drive...',
+            allowOutsideClick: false,
+            background: '#111',
+            color: '#fff',
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            const res = await sendRequest({
+                action: 'search_drive',
+                query: query,
+                parentId: parentId
+            });
+
+            const tbody = document.getElementById('searchResults');
+            tbody.innerHTML = '';
+
+            if (res.status === 'success' && res.results && res.results.length > 0) {
+                res.results.forEach(item => {
+                    const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td title="${item.name}">${isFolder ? '📁' : '📄'} ${item.name}</td>
+                        <td><span class="badge ${isFolder ? 'badge-warning' : 'badge-success'}">${isFolder ? 'Folder' : 'File'}</span></td>
+                        <td>${item.size}</td>
+                        <td>${item.date}</td>
+                        <td>
+                            <button class="btn-table" onclick="window.open('${item.url}', '_blank')">Buka</button>
+                            <button class="btn-table btn-table-danger" onclick="deleteItem('${item.id}', '${item.name}', '${item.mimeType}')">Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                Swal.close();
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #888;">Tidak ada file/folder yang ditemukan.</td></tr>`;
+                Swal.fire({ icon: 'info', title: 'Tidak Ditemukan', text: 'Pencarian tidak mengembalikan berkas apapun.', background: '#111', color: '#fff' });
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Pencarian Gagal', text: err.message, background: '#111', color: '#fff' });
         }
     }
-    function updateProgress(percent, text) { progressBar.style.width = percent + "%"; document.getElementById('progressPercent').textContent = percent + "%"; document.getElementById('progressText').textContent = text; }
-    function addLog(msg, type) { const div = document.createElement('div'); div.className = 'log-item log-' + type; div.innerHTML = `<span class="log-icon">${getIcon(type)}</span> <span>${msg}</span>`; logArea.appendChild(div); logArea.scrollTop = logArea.scrollHeight; }
-    
-    // Updated to show detail message
-    function addLogHTML(name, url, size, type, detailMsg) { 
-        const div = document.createElement('div'); 
-        div.className = 'log-item log-' + type; 
-        const icon = getIcon(type); 
-        const content = url && url !== '#' ? `<a href="${url}" target="_blank">${name}</a>` : name; 
+
+    async function deleteItem(id, name, type) {
+        const confirmDel = await Swal.fire({
+            title: 'Hapus Item?',
+            text: `Apakah Anda yakin ingin memindahkan "${name}" ke tempat sampah?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--error)',
+            cancelButtonColor: 'var(--accent)',
+            confirmButtonText: 'Ya, Sampahkan!',
+            background: '#111',
+            color: '#fff'
+        });
+
+        if(!confirmDel.isConfirmed) return;
+
+        Swal.fire({ title: 'Menghapus...', background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const res = await sendRequest({
+                action: 'delete_item',
+                id: id,
+                type: type
+            });
+
+            if (res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Berhasil Dihapus', text: 'Item dipindahkan ke trash.', background: '#111', color: '#fff' });
+                searchDrive(); // Refresh list
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    // --- TAB 4: AI ASSISTANT ---
+    async function generateFileAI() {
+        const apiKey = document.getElementById('geminiApiKey').value.trim();
+        const fileName = document.getElementById('aiFileName').value.trim();
+        const prompt = document.getElementById('aiPrompt').value.trim();
+        const dest = document.getElementById('aiDestFolder').value.trim();
+
+        if (!apiKey) { Swal.fire({ icon: 'warning', title: 'Key Kosong', text: 'Masukkan API Key Gemini terlebih dahulu.', background: '#111', color: '#fff' }); return; }
+        if (!fileName || !prompt) { Swal.fire({ icon: 'warning', title: 'Field Kosong', text: 'Isi nama file dan prompt instruksi.', background: '#111', color: '#fff' }); return; }
+
+        Swal.fire({ title: 'Mengenerate File dengan Gemini AI...', text: 'Membuat dokumen baru di Drive...', allowOutsideClick: false, background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const res = await sendRequest({
+                action: 'gemini_ai',
+                mode: 'generate_file',
+                apiKey: apiKey,
+                fileName: fileName,
+                prompt: prompt,
+                destId: dest
+            });
+
+            if (res.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'File Berhasil Dibuat!',
+                    html: `<p>${res.message}</p><br><a href="${res.url}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">🔗 Buka File "${res.name}"</a>`,
+                    background: '#111',
+                    color: '#fff'
+                });
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'AI Generate Gagal', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    async function analyzeFolderAI() {
+        const apiKey = document.getElementById('geminiApiKey').value.trim();
+        const folderId = document.getElementById('aiFolderToAnalyze').value.trim();
+
+        if (!apiKey) { Swal.fire({ icon: 'warning', title: 'Key Kosong', text: 'Masukkan API Key Gemini terlebih dahulu.', background: '#111', color: '#fff' }); return; }
+        if (!folderId) { Swal.fire({ icon: 'warning', title: 'Folder Kosong', text: 'Masukkan ID/Link folder Google Drive.', background: '#111', color: '#fff' }); return; }
+
+        Swal.fire({ title: 'Menganalisis Folder...', text: 'Gemini sedang membaca daftar berkas...', allowOutsideClick: false, background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const res = await sendRequest({
+                action: 'gemini_ai',
+                mode: 'analyze_folder',
+                apiKey: apiKey,
+                destId: folderId
+            });
+
+            if (res.status === 'success') {
+                Swal.fire({
+                    title: `Analisis Folder: ${res.folderName}`,
+                    html: `<div style="text-align:left; font-size:0.85rem; line-height:1.4; max-height:300px; overflow-y:auto; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid #333; color:#eee;">${res.analysis.replace(/\n/g, '<br>')}</div>`,
+                    background: '#111',
+                    color: '#fff',
+                    width: '600px'
+                });
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Analisis Gagal', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    async function sendChatAI() {
+        const apiKey = document.getElementById('geminiApiKey').value.trim();
+        const inputEl = document.getElementById('chatInput');
+        const prompt = inputEl.value.trim();
+
+        if (!apiKey) { Swal.fire({ icon: 'warning', title: 'Key Kosong', text: 'Masukkan API Key Gemini terlebih dahulu.', background: '#111', color: '#fff' }); return; }
+        if (!prompt) return;
+
+        inputEl.value = '';
+        appendChatBubble(prompt, 'user');
+
+        try {
+            const res = await sendRequest({
+                action: 'gemini_ai',
+                mode: 'chat_app',
+                apiKey: apiKey,
+                prompt: prompt
+            });
+
+            if (res.status === 'success') {
+                appendChatBubble(res.answer, 'ai');
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            appendChatBubble(`Error: ${err.message}`, 'ai');
+        }
+    }
+
+    function appendChatBubble(text, sender) {
+        const history = document.getElementById('chatHistory');
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble chat-${sender}`;
+        bubble.innerHTML = text.replace(/\n/g, '<br>');
+        history.appendChild(bubble);
+        history.scrollTop = history.scrollHeight;
+    }
+
+    // --- TAB 5: REMOTE NODES ---
+    async function loadRemoteNodes() {
+        if(!userPin) return;
+        try {
+            const res = await sendRequest({ action: 'get_remote_accounts' });
+            const tbody = document.getElementById('remoteList');
+            tbody.innerHTML = '';
+
+            if (res.status === 'success' && res.list && res.list.length > 0) {
+                res.list.forEach(node => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${node.label}</td>
+                        <td>${node.email}</td>
+                        <td title="${node.url}">${node.url.substring(0, 35)}...</td>
+                        <td>
+                            <button class="btn-table" onclick="testRemoteNode('${node.url}', '${node.label}')">Tes Link</button>
+                            <button class="btn-table btn-table-danger" onclick="deleteRemoteNode('${node.id}')">Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #888;">Belum ada remote node yang tersimpan.</td></tr>`;
+            }
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    async function addRemoteNode() {
+        const label = document.getElementById('remoteLabel').value.trim();
+        const url = document.getElementById('remoteUrl').value.trim();
+
+        if(!label || !url) { Swal.fire({ icon: 'warning', title: 'Field Kosong', text: 'Isi label dan URL node server.', background: '#111', color: '#fff' }); return; }
+
+        Swal.fire({ title: 'Menyimpan Node...', background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const res = await sendRequest({
+                action: 'save_remote_account',
+                label: label,
+                targetUrl: url
+            });
+
+            if (res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Node Ditambahkan!', text: `Node berhasil dihubungkan ke server dengan email ${res.email}`, background: '#111', color: '#fff' });
+                document.getElementById('remoteLabel').value = '';
+                document.getElementById('remoteUrl').value = '';
+                loadRemoteNodes();
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Koneksi Node Gagal', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    async function testRemoteNode(url, label) {
+        Swal.fire({ title: `Mengetes koneksi ke node "${label}"...`, background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+        try {
+            const res = await sendRequest({
+                action: 'connect_remote_dest',
+                targetUrl: url
+            });
+            if (res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Koneksi Sukses!', text: `Server remote berhasil menyiapkan folder inbox.`, background: '#111', color: '#fff' });
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Koneksi Gagal', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    async function deleteRemoteNode(id) {
+        const confirmNode = await Swal.fire({
+            title: 'Hapus Node?',
+            text: 'Apakah Anda yakin ingin menghapus server node ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--error)',
+            cancelButtonColor: 'var(--accent)',
+            confirmButtonText: 'Ya, Hapus!',
+            background: '#111',
+            color: '#fff'
+        });
+
+        if(!confirmNode.isConfirmed) return;
+
+        try {
+            const res = await sendRequest({
+                action: 'delete_remote_account',
+                id: id
+            });
+            if (res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Dihapus', text: 'Node remote telah dihapus.', background: '#111', color: '#fff' });
+                loadRemoteNodes();
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    // --- TAB 6: SCHEDULER ENGINE ---
+    async function loadScheduleList() {
+        if(!userPin) return;
+        try {
+            const res = await sendRequest({ action: 'get_schedule_list' });
+            const tbody = document.getElementById('scheduleList');
+            tbody.innerHTML = '';
+
+            if (res.status === 'success' && res.list && res.list.length > 0) {
+                res.list.forEach(item => {
+                    const dateStr = item.lastRun ? new Date(item.lastRun).toLocaleString('id-ID') : 'Belum Pernah';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${item.label}</td>
+                        <td title="${item.config.urls[0]}">${item.config.urls[0].substring(0, 30)}...</td>
+                        <td title="${item.config.destUrl || 'Default'}">${(item.config.destUrl || 'Default').substring(0, 30)}</td>
+                        <td>${dateStr}</td>
+                        <td>
+                            <button class="btn-table btn-table-danger" onclick="deleteSchedule('${item.id}')">Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #888;">Belum ada jadwal sinkronisasi yang tersimpan.</td></tr>`;
+            }
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    async function addScheduleItem() {
+        const label = document.getElementById('schedLabel').value.trim();
+        const src = document.getElementById('schedSourceUrl').value.trim();
+        const dest = document.getElementById('schedDestUrl').value.trim();
+        const mode = document.getElementById('schedMode').value;
+        const maxBackups = parseInt(document.getElementById('schedMaxBackups').value) || 5;
+
+        if(!label || !src) { Swal.fire({ icon: 'warning', title: 'Field Kosong', text: 'Isi label jadwal dan link sumber.', background: '#111', color: '#fff' }); return; }
+
+        Swal.fire({ title: 'Menyimpan Jadwal...', background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const res = await sendRequest({
+                action: 'add_schedule_item',
+                label: label,
+                config: {
+                    urls: [src],
+                    destUrl: dest,
+                    mode: mode,
+                    maxBackups: maxBackups,
+                    isSchedule: true,
+                    filters: {}
+                }
+            });
+
+            if (res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Jadwal Disimpan!', text: 'Sinkronisasi otomatis harian berhasil didaftarkan.', background: '#111', color: '#fff' });
+                document.getElementById('schedLabel').value = '';
+                document.getElementById('schedSourceUrl').value = '';
+                document.getElementById('schedDestUrl').value = '';
+                loadScheduleList();
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Gagal Menyimpan Jadwal', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    async function deleteSchedule(id) {
+        const confirmSched = await Swal.fire({
+            title: 'Hapus Jadwal?',
+            text: 'Apakah Anda yakin ingin menghapus jadwal backup otomatis ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--error)',
+            cancelButtonColor: 'var(--accent)',
+            confirmButtonText: 'Ya, Hapus!',
+            background: '#111',
+            color: '#fff'
+        });
+
+        if(!confirmSched.isConfirmed) return;
+
+        try {
+            const res = await sendRequest({
+                action: 'delete_schedule_item',
+                id: id
+            });
+            if (res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Dihapus', text: 'Tugas terjadwal telah dihapus.', background: '#111', color: '#fff' });
+                loadScheduleList();
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    // --- INTERNAL UTILS ---
+    function initParticles() {
+        if (typeof tsParticles !== 'undefined') {
+            tsParticles.load("tsparticles", {
+                fpsLimit: 60,
+                particles: {
+                    number: { value: 20, density: { enable: true, area: 800 } },
+                    shape: { type: ["char", "circle"], character: [ { value: ["📂", "💾", "🚀", "✨", "📄"], font: "Verdana", weight: "400" } ] },
+                    color: { value: ["#00d2ff", "#ff00de", "#f4b400", "#6c5ce7", "#ffffff"] },
+                    opacity: { value: 0.35, random: true },
+                    size: { value: { min: 8, max: 18 }, random: true },
+                    move: { enable: true, speed: 0.8, direction: "none", random: true, outModes: { default: "out" } }
+                }
+            });
+        }
+    }
+
+    function launchConfetti() {
+        if (typeof confetti !== 'undefined') {
+            var duration = 3000;
+            var end = Date.now() + duration;
+            var interval = setInterval(function() {
+                if (Date.now() > end) return clearInterval(interval);
+                confetti({ particleCount: 40, spread: 360, startVelocity: 30, origin: { x: Math.random(), y: Math.random() - 0.2 } });
+            }, 250);
+        }
+    }
+
+    // parsing format data
+    function parseBytesToNum(sizeStr) {
+        if (!sizeStr) return 0;
+        const units = { 'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4 };
+        const parts = sizeStr.trim().split(' ');
+        return parseFloat(parts[0]) * (units[parts[1]] || 1);
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][i];
+    }
+
+    function setUIState(state) {
+        const submitBtn = document.getElementById('submitBtn');
+        const checkBtn = document.getElementById('checkBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const bgToggle = document.getElementById('bgToggle');
+        const folderUrls = document.getElementById('folderUrls');
+        const destUrl = document.getElementById('destUrl');
+        const progressWrapper = document.getElementById('progressWrapper');
+        const logArea = document.getElementById('logArea');
+
+        if (state === 'running') {
+            submitBtn.style.display = 'none';
+            checkBtn.style.display = 'none';
+            stopBtn.style.display = 'block';
+            stopBtn.disabled = false;
+            stopBtn.textContent = "STOP 🛑";
+            folderUrls.disabled = true;
+            destUrl.disabled = true;
+            bgToggle.disabled = true;
+            progressWrapper.style.display = 'block';
+            logArea.style.display = 'block';
+        } else {
+            submitBtn.style.display = 'block';
+            checkBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            folderUrls.disabled = false;
+            destUrl.disabled = false;
+            bgToggle.disabled = false;
+        }
+    }
+
+    function updateProgress(percent, text) {
+        document.getElementById('progressBar').style.width = percent + "%";
+        document.getElementById('progressPercent').textContent = percent + "%";
+        document.getElementById('progressText').textContent = text;
+    }
+
+    function addLog(msg, type) {
+        const logArea = document.getElementById('logArea');
+        const div = document.createElement('div');
+        div.className = 'log-item log-' + type;
+        div.innerHTML = `<span class="log-icon">${getIcon(type)}</span> <span>${msg}</span>`;
+        logArea.appendChild(div);
+        logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    function addLogHTML(name, url, size, type, detailMsg) {
+        const logArea = document.getElementById('logArea');
+        const div = document.createElement('div');
+        div.className = 'log-item log-' + type;
+        const icon = getIcon(type);
+        const content = url && url !== '#' ? `<a href="${url}" target="_blank">${name}</a>` : name;
         
         let msg = content;
-        if(detailMsg && detailMsg !== "Success") msg += ` <span style="font-size:0.8em; opacity:0.8">(${detailMsg})</span>`;
+        if(detailMsg && detailMsg !== "Success" && detailMsg !== "Copied") {
+            msg += ` <span style="font-size:0.8em; opacity:0.8">(${detailMsg})</span>`;
+        }
 
-        div.innerHTML = `<span class="log-icon">${icon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${msg}</span> <span class="log-size">${size}</span>`; 
-        logArea.appendChild(div); 
-        logArea.scrollTop = logArea.scrollHeight; 
+        div.innerHTML = `<span class="log-icon">${icon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${msg}</span> <span class="log-size">${size}</span>`;
+        logArea.appendChild(div);
+        logArea.scrollTop = logArea.scrollHeight;
     }
-    
-    function getIcon(type) { if(type === 'success') return '✅'; if(type === 'error') return '❌'; if(type === 'skip') return '⏩'; if(type === 'info') return 'ℹ️'; if(type === 'warning') return '⚠️'; return '•'; }
-    function clearLog() { logArea.innerHTML = ''; }
-    function shortUrl(url) { return url.length > 40 ? url.substring(0, 35) + "..." : url; }
-    function startTimer() { const s = Date.now(); timerDisplay.textContent = "00:00:00"; clearInterval(timerInterval); timerInterval = setInterval(() => { const e = Date.now() - s; const h = Math.floor(e / 3600000); const m = Math.floor((e % 3600000) / 60000); const sec = Math.floor((e % 60000) / 1000); timerDisplay.textContent = `${pad(h)}:${pad(m)}:${pad(sec)}`; }, 1000); }
-    function stopTimer() { clearInterval(timerInterval); }
-    function pad(n) { return n.toString().padStart(2, '0'); }
+
+    function getIcon(type) {
+        if(type === 'success') return '✅';
+        if(type === 'error') return '❌';
+        if(type === 'skip') return '⏩';
+        if(type === 'info') return 'ℹ️';
+        if(type === 'warning') return '⚠️';
+        return '•';
+    }
+
+    function clearLog() {
+        document.getElementById('logArea').innerHTML = '';
+    }
+
+    function startTimer() {
+        const start = Date.now();
+        const display = document.getElementById('timerDisplay');
+        display.textContent = "00:00:00";
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const elapsed = Date.now() - start;
+            const h = Math.floor(elapsed / 3600000);
+            const m = Math.floor((elapsed % 3600000) / 60000);
+            const s = Math.floor((elapsed % 60000) / 1000);
+            display.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+
+    function pad(n) {
+        return n.toString().padStart(2, '0');
+    }
 </script>
 
 </body>
