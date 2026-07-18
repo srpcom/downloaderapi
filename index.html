@@ -1047,7 +1047,7 @@
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: #a0a0b0;">
                                 <th style="padding: 10px;">Nama</th>
                                 <th style="padding: 10px; width: 120px;">Ukuran</th>
-                                <th style="padding: 10px; width: 280px; text-align: right;">Aksi</th>
+                                <th style="padding: 10px; width: 280px; text-align: right;" class="col-actions">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="explorerList">
@@ -2272,7 +2272,7 @@
                         tr.innerHTML = `
                             <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
                             <td style="padding: 10px; color: #888;">-</td>
-                            <td style="padding: 10px; text-align: right;">
+                            <td style="padding: 10px; text-align: right;" class="col-actions">
                                 <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
                                 <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 6px;" onchange="changeRemoteShare(this, '${folder.id}', 'folder', '${folder.name}')">
                                     <option value="" disabled selected hidden>Share</option>
@@ -2296,7 +2296,7 @@
                         tr.innerHTML = `
                             <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
                             <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
-                            <td style="padding: 10px; text-align: right;">
+                            <td style="padding: 10px; text-align: right;" class="col-actions">
                                 <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 6px;" onchange="changeRemoteShare(this, '${file.id}', 'file', '${file.name}')">
                                     <option value="" disabled selected hidden>Share</option>
                                     <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
@@ -2410,7 +2410,7 @@
                         tr.innerHTML = `
                             <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
                             <td style="padding: 10px; color: #888;">-</td>
-                            <td style="padding: 10px; text-align: right;">
+                            <td style="padding: 10px; text-align: right;" class="col-actions">
                                 <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
                                 <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 6px;" onchange="changeRemoteShare(this, '${folder.id}', 'folder', '${folder.name}')">
                                     <option value="" disabled selected hidden>Share</option>
@@ -2434,7 +2434,7 @@
                         tr.innerHTML = `
                             <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
                             <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
-                            <td style="padding: 10px; text-align: right;">
+                            <td style="padding: 10px; text-align: right;" class="col-actions">
                                 <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 6px;" onchange="changeRemoteShare(this, '${file.id}', 'file', '${file.name}')">
                                     <option value="" disabled selected hidden>Share</option>
                                     <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
