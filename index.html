@@ -975,7 +975,10 @@
                 <input type="text" id="remoteUrl" placeholder="URL Web App Google Apps Script Node" style="flex: 2; min-width: 250px;">
                 <input type="password" id="remoteToken" placeholder="Token / Passcode" style="flex: 0.8; min-width: 120px;">
             </div>
-            <button class="action-btn btn-primary" onclick="addRemoteNode()">Tambah Node</button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="action-btn btn-primary" onclick="addRemoteNode()">Tambah Node</button>
+                <button class="action-btn" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.3);" onclick="copyRemoteCode()">📋 Salin Kode Remote Node</button>
+            </div>
         </div>
 
         <div class="table-wrapper" style="margin-top: 20px;">
@@ -2111,6 +2114,50 @@
             }
         } catch(err) {
             Swal.fire({ icon: 'error', title: 'Koneksi Node Gagal', text: err.message, background: '#111', color: '#fff' });
+    }
+
+    async function copyRemoteCode() {
+        Swal.fire({
+            title: 'Mengambil Kode...',
+            text: 'Mengunduh kode remote_node.gs dari GitHub...',
+            allowOutsideClick: false,
+            background: '#111',
+            color: '#fff',
+            didOpen: () => { Swal.showLoading(); }
+        });
+        
+        try {
+            const res = await fetch('https://raw.githubusercontent.com/srpcom/downloaderapi/main/remote_node.gs');
+            if (!res.ok) throw new Error('Gagal mengunduh file dari GitHub.');
+            const code = await res.text();
+            
+            // Salin ke clipboard dengan fallback
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(code);
+            } else {
+                const el = document.createElement('textarea');
+                el.value = code;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Kode Disalin! 📋',
+                text: 'Kode remote_node.gs berhasil disalin ke clipboard Anda. Silakan paste di Apps Script akun remote Anda.',
+                background: '#111',
+                color: '#fff'
+            });
+        } catch(err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyalin',
+                text: err.message || 'Terjadi kesalahan saat mengambil kode.',
+                background: '#111',
+                color: '#fff'
+            });
         }
     }
 
