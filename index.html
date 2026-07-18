@@ -975,10 +975,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Label</th>
-                        <th>Email Server</th>
-                        <th>Endpoint URL</th>
-                        <th>Aksi</th>
+                        <th style="width: 20%;">Label</th>
+                        <th style="width: 25%;">Email Server</th>
+                        <th style="width: 30%;">Endpoint URL</th>
+                        <th style="width: 25%;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="remoteList">
@@ -2029,10 +2029,10 @@
                         <td>${node.label}</td>
                         <td>${node.email}</td>
                         <td title="${node.url}">${node.url.substring(0, 35)}...</td>
-                        <td>
-                            <button class="btn-table" onclick="testRemoteNode('${node.url}', '${node.label}')">Tes Link</button>
+                        <td style="white-space: nowrap;">
+                            <button class="btn-table" onclick="testRemoteNode('${node.url}', '${node.label}')">🔌 Tes Link</button>
                             <button class="btn-table" style="background: var(--primary);" onclick="openRemoteExplorer('${node.id}', '${node.label}')">🔍 Jelajahi</button>
-                            <button class="btn-table btn-table-danger" onclick="deleteRemoteNode('${node.id}')">Hapus</button>
+                            <button class="btn-table btn-table-danger" onclick="deleteRemoteNode('${node.id}')">🗑️ Hapus</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
