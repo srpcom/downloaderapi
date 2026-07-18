@@ -841,10 +841,19 @@ function extractResourceKeyFromUrl(u) { if(!u) return null; var m = u.match(/[?&
 function formatBytes(b) { if(b===0) return '0 B'; var k=1024; var i=Math.floor(Math.log(b)/Math.log(k)); return parseFloat((b/Math.pow(k,i)).toFixed(2)) + ' ' + ['B','KB','MB','GB','TB'][i]; }
 function parseBytesFromFormat(s) { if(!s) return 0; var u={'B':1,'KB':1024,'MB':1024*1024,'GB':1024*1024*1024}; var p=s.split(' '); return parseFloat(p[0]) * (u[p[1]]||1); }
 function responseJSON(d) { return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON); }
+function getCacheKey(token) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, token);
+  return "sso_" + Utilities.base64Encode(digest).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
 function verifyToken(token) {
+   if (!token) return null;
    var cache = CacheService.getScriptCache();
-   var cachedEmail = cache.get("sso_" + token);
-   if (cachedEmail) return cachedEmail;
+   var cacheKey = getCacheKey(token);
+   try {
+     var cachedEmail = cache.get(cacheKey);
+     if (cachedEmail) return cachedEmail;
+   } catch(cacheErr) {}
    try {
      var url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
      var res = UrlFetchApp.fetch(url, {muteHttpExceptions: true});
@@ -852,7 +861,9 @@ function verifyToken(token) {
         var json = JSON.parse(res.getContentText());
         var email = json.email;
         if (json.aud === "404619775216-omjf6cn7j82kdnmev20rr9vp11hr7fka.apps.googleusercontent.com") {
-            cache.put("sso_" + token, email, 21600); // 6 hours
+            try {
+               cache.put(cacheKey, email, 21600); // 6 hours
+            } catch(cachePutErr) {}
             return email;
         }
      }
