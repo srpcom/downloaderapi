@@ -675,24 +675,27 @@
 </head>
 <body>
 
-<div id="ssoOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 12, 41, 0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
-    <div style="background: rgba(0,0,0,0.5); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
-        <h2 style="margin-bottom: 20px; color: white;">🔐 Akses Terbatas</h2>
-        <p style="margin-bottom: 30px; color: #ccc;">Silakan masuk menggunakan akun Google Anda.</p>
-        <div id="g_id_onload"
-             data-client_id="404619775216-omjf6cn7j82kdnmev20rr9vp11hr7fka.apps.googleusercontent.com"
-             data-context="signin"
-             data-ux_mode="popup"
-             data-callback="handleCredentialResponse"
-             data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin"
-             data-type="standard"
-             data-shape="rectangular"
-             data-theme="outline"
-             data-text="signin_with"
-             data-size="large"
-             data-logo_alignment="left">
+<div id="ssoOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 9, 26, 0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+    <div style="background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 50px 40px; width: 90%; max-width: 420px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">🔐</div>
+        <h2 style="margin-bottom: 10px; color: white; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.8rem; letter-spacing: -0.5px;">Akses Terbatas</h2>
+        <p style="margin-bottom: 35px; color: #a0a0b0; font-family: 'Poppins', sans-serif; font-size: 0.95rem; line-height: 1.6;">Silakan masuk menggunakan akun Google Anda untuk mengakses G-Drive Ultimate.</p>
+        <div style="display: flex; justify-content: center; width: 100%;">
+            <div id="g_id_onload"
+                 data-client_id="404619775216-omjf6cn7j82kdnmev20rr9vp11hr7fka.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left">
+            </div>
         </div>
     </div>
 </div>
@@ -1063,17 +1066,20 @@
     }
 
     function checkAndPromptPin() {
+        const container = document.querySelector('.container');
         if (!ssoToken) {
             document.getElementById('ssoOverlay').style.display = 'flex';
+            if (container) container.style.display = 'none';
         } else {
             document.getElementById('ssoOverlay').style.display = 'none';
+            if (container) container.style.display = 'block';
         }
     }
 
     function handleCredentialResponse(response) {
         ssoToken = response.credential;
         localStorage.setItem('gdrive_sso_token', ssoToken);
-        document.getElementById('ssoOverlay').style.display = 'none';
+        checkAndPromptPin();
         Swal.fire({ icon: 'success', title: 'Login Berhasil!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
         loadRemoteNodes();
         loadScheduleList();
@@ -2002,13 +2008,65 @@
             tsParticles.load("tsparticles", {
                 fpsLimit: 60,
                 particles: {
-                    number: { value: 20, density: { enable: true, area: 800 } },
-                    shape: { type: ["char", "circle"], character: [ { value: ["📂", "💾", "🚀", "✨", "📄"], font: "Verdana", weight: "400" } ] },
+                    number: { value: 30, density: { enable: true, area: 800 } },
+                    shape: { 
+                        type: ["char", "circle"], 
+                        character: [ { value: ["📂", "💾", "🚀", "✨", "📄"], font: "Verdana", weight: "400" } ] 
+                    },
                     color: { value: ["#00d2ff", "#ff00de", "#f4b400", "#6c5ce7", "#ffffff"] },
-                    opacity: { value: 0.35, random: true },
-                    size: { value: { min: 8, max: 18 }, random: true },
-                    move: { enable: true, speed: 0.8, direction: "none", random: true, outModes: { default: "out" } }
-                }
+                    opacity: { value: 0.45, random: true },
+                    size: { value: { min: 10, max: 18 }, random: true },
+                    links: {
+                        enable: true,
+                        distance: 140,
+                        color: "#00d2ff",
+                        opacity: 0.25,
+                        width: 1.5,
+                        triangles: {
+                            enable: true,
+                            color: "#302b63",
+                            opacity: 0.05
+                        }
+                    },
+                    move: { 
+                        enable: true, 
+                        speed: 1.2, 
+                        direction: "none", 
+                        random: true, 
+                        straight: false,
+                        outModes: { default: "bounce" } 
+                    },
+                    // Cloning / splitting simulation:
+                    collisions: {
+                        enable: true,
+                        mode: "bounce"
+                    },
+                    destroy: {
+                        mode: "split",
+                        split: {
+                            count: 2,
+                            factor: { value: 2 },
+                            rate: { value: 1 },
+                            particles: {
+                                size: { value: { min: 4, max: 8 } },
+                                opacity: { value: 0.6 },
+                                move: { speed: 3 }
+                            }
+                        }
+                    }
+                },
+                interactivity: {
+                    events: {
+                        onHover: { enable: true, mode: "grab" },
+                        onClick: { enable: true, mode: "push" },
+                        resize: true
+                    },
+                    modes: {
+                        grab: { distance: 180, links: { opacity: 0.6 } },
+                        push: { quantity: 3 }
+                    }
+                },
+                detectRetina: true
             });
         }
     }
