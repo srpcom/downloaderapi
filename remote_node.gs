@@ -326,7 +326,7 @@ function getPairingHtml() {
     
     <div class="form-group">
       <label>URL Web App Server Utama (Master)</label>
-      <input type="text" id="masterUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      <input type="text" id="masterUrl" value="https://script.google.com/macros/s/AKfycbz4RFANjPjkHL6nuMbNBtRUf3cRtQ5vz2DpIUF6mql8z4PMRgFxBKeTWVX_4pQUGENa/exec" placeholder="https://script.google.com/macros/s/.../exec">
     </div>
     
     <div class="form-group">
