@@ -963,13 +963,10 @@
     <div class="tab-content" id="tab-remote">
         <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
             <h4 style="color: var(--primary); margin-bottom: 10px;">Tambah Server Node Baru</h4>
-            <div class="two-col" style="margin-bottom: 10px;">
-                <div class="col">
-                    <input type="text" id="remoteLabel" placeholder="Label Node (contoh: Akun Cadangan B)">
-                </div>
-                <div class="col">
-                    <input type="text" id="remoteUrl" placeholder="URL Web App Google Apps Script Node">
-                </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                <input type="text" id="remoteLabel" placeholder="Label Node (contoh: Akun Cadangan B)" style="flex: 1; min-width: 180px;">
+                <input type="text" id="remoteUrl" placeholder="URL Web App Google Apps Script Node" style="flex: 2; min-width: 250px;">
+                <input type="password" id="remoteToken" placeholder="Token / Passcode" style="flex: 0.8; min-width: 120px;">
             </div>
             <button class="action-btn btn-primary" onclick="addRemoteNode()">Tambah Node</button>
         </div>
@@ -990,6 +987,65 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- REMOTE FILE EXPLORER MODAL -->
+    <div id="explorerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 9, 26, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: rgba(25, 20, 50, 0.95); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; width: 95%; max-width: 960px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.6);">
+            <!-- Header Explorer -->
+            <div style="padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+                <div>
+                    <h3 id="explorerTitle" style="color: white; margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 8px;">📁 Remote File Explorer</h3>
+                    <span id="explorerSubtitle" style="color: #888; font-size: 0.85rem;">Menjelajahi Akun Remote...</span>
+                </div>
+                <button onclick="closeExplorer()" style="background: transparent; border: none; color: #ff4757; font-size: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='none'">✕</button>
+            </div>
+            
+            <!-- Toolbar Explorer -->
+            <div style="padding: 12px 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <!-- Navigasi Back & Refresh -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button onclick="goUpRemoteFolder()" id="explorerBackBtn" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;" disabled>⬆&nbsp;Naik</button>
+                    <button onclick="refreshRemoteFolder()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">🔄 Refresh</button>
+                    <button onclick="createRemoteFolder()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; color: #2ed573;">📁 Buat Folder</button>
+                </div>
+                
+                <!-- Pencarian Remote -->
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <input type="text" id="explorerSearchInput" placeholder="Cari di remote..." style="padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; font-size: 0.85rem; outline: none;" onkeyup="if(event.key==='Enter') searchRemoteDrive()">
+                    <button onclick="searchRemoteDrive()" class="action-btn btn-primary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px;">Cari</button>
+                </div>
+            </div>
+            
+            <!-- Breadcrumbs Path -->
+            <div style="padding: 10px 20px; font-size: 0.85rem; background: rgba(0,0,0,0.1); border-bottom: 1px solid rgba(255,255,255,0.03); color: #00d2ff; display: flex; align-items: center; gap: 5px;">
+                <span>📍 Path:</span>
+                <span id="explorerPath" style="font-weight: 500;">root</span>
+            </div>
+            
+            <!-- Konten Explorer -->
+            <div style="flex: 1; overflow-y: auto; padding: 15px 20px; min-height: 200px; display: flex; flex-direction: column;">
+                <div id="explorerLoading" style="display: none; text-align: center; padding: 40px; margin: auto;">
+                    <div class="cloner-loader" style="margin: 0 auto 15px auto;"></div>
+                    <div style="color: #888;">Memuat data Google Drive...</div>
+                </div>
+                
+                <div id="explorerTableWrapper" style="width: 100%;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: 'Poppins', sans-serif; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: #a0a0b0;">
+                                <th style="padding: 10px;">Nama</th>
+                                <th style="padding: 10px; width: 120px;">Ukuran</th>
+                                <th style="padding: 10px; width: 280px; text-align: right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="explorerList">
+                            <!-- File & Folder Remote akan di-render di sini -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1975,6 +2031,7 @@
                         <td title="${node.url}">${node.url.substring(0, 35)}...</td>
                         <td>
                             <button class="btn-table" onclick="testRemoteNode('${node.url}', '${node.label}')">Tes Link</button>
+                            <button class="btn-table" style="background: var(--primary);" onclick="openRemoteExplorer('${node.id}', '${node.label}')">🔍 Jelajahi</button>
                             <button class="btn-table btn-table-danger" onclick="deleteRemoteNode('${node.id}')">Hapus</button>
                         </td>
                     `;
@@ -1991,6 +2048,7 @@
     async function addRemoteNode() {
         const label = document.getElementById('remoteLabel').value.trim();
         const url = document.getElementById('remoteUrl').value.trim();
+        const token = document.getElementById('remoteToken').value.trim();
 
         if(!label || !url) { Swal.fire({ icon: 'warning', title: 'Field Kosong', text: 'Isi label dan URL node server.', background: '#111', color: '#fff' }); return; }
 
@@ -2000,13 +2058,15 @@
             const res = await sendRequest({
                 action: 'save_remote_account',
                 label: label,
-                targetUrl: url
+                targetUrl: url,
+                token: token
             });
 
             if (res.status === 'success') {
                 Swal.fire({ icon: 'success', title: 'Node Ditambahkan!', text: `Node berhasil dihubungkan ke server dengan email ${res.email}`, background: '#111', color: '#fff' });
                 document.getElementById('remoteLabel').value = '';
                 document.getElementById('remoteUrl').value = '';
+                document.getElementById('remoteToken').value = '';
                 loadRemoteNodes();
             } else {
                 throw new Error(res.message);
@@ -2060,6 +2120,337 @@
         } catch(err) {
             Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#111', color: '#fff' });
         }
+    }
+
+    // --- REMOTE FILE EXPLORER CLIENT LOGIC ---
+    let activeNodeId = '';
+    let currentRemoteFolderId = 'root';
+    let remoteParentFolderId = null;
+
+    function openRemoteExplorer(nodeId, label) {
+        activeNodeId = nodeId;
+        currentRemoteFolderId = 'root';
+        remoteParentFolderId = null;
+        
+        document.getElementById('explorerTitle').innerHTML = `📁 Remote Explorer - ${label}`;
+        document.getElementById('explorerModal').style.display = 'flex';
+        document.getElementById('explorerSearchInput').value = '';
+        
+        loadRemoteFolder('root');
+    }
+
+    function closeExplorer() {
+        document.getElementById('explorerModal').style.display = 'none';
+    }
+
+    async function loadRemoteFolder(folderId) {
+        const loading = document.getElementById('explorerLoading');
+        const wrapper = document.getElementById('explorerTableWrapper');
+        const list = document.getElementById('explorerList');
+        
+        loading.style.display = 'block';
+        wrapper.style.display = 'none';
+        list.innerHTML = '';
+
+        try {
+            const res = await sendRequest({
+                action: 'remote_proxy',
+                nodeId: activeNodeId,
+                remoteAction: 'list_dir',
+                parentId: folderId
+            });
+
+            loading.style.display = 'none';
+            wrapper.style.display = 'block';
+
+            if (res.status === 'success') {
+                currentRemoteFolderId = res.currentId;
+                remoteParentFolderId = res.parentId;
+                
+                document.getElementById('explorerPath').textContent = `${res.currentName} (${res.currentId})`;
+                
+                const backBtn = document.getElementById('explorerBackBtn');
+                if (res.parentId && res.currentId !== 'root') {
+                    backBtn.disabled = false;
+                    backBtn.style.opacity = '1';
+                } else {
+                    backBtn.disabled = true;
+                    backBtn.style.opacity = '0.5';
+                }
+
+                // Render Folder
+                if (res.folders && res.folders.length > 0) {
+                    res.folders.forEach(folder => {
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+                        tr.innerHTML = `
+                            <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
+                            <td style="padding: 10px; color: #888;">-</td>
+                            <td style="padding: 10px; text-align: right;">
+                                <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
+                                <button class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2);" onclick="shareRemoteItem('${folder.id}', 'folder', '${folder.name}')">Share</button>
+                                <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${folder.id}', 'folder', '${folder.name}')">Salin</button>
+                                <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${folder.id}', 'folder', '${folder.name}')">Hapus</button>
+                            </td>
+                        `;
+                        list.appendChild(tr);
+                    });
+                }
+
+                // Render File
+                if (res.files && res.files.length > 0) {
+                    res.files.forEach(file => {
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+                        tr.innerHTML = `
+                            <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
+                            <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
+                            <td style="padding: 10px; text-align: right;">
+                                <button class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2);" onclick="shareRemoteItem('${file.id}', 'file', '${file.name}')">Share</button>
+                                <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${file.id}', 'file', '${file.name}')">Salin</button>
+                                <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${file.id}', 'file', '${file.name}')">Hapus</button>
+                            </td>
+                        `;
+                        list.appendChild(tr);
+                    });
+                }
+
+                if ((!res.folders || res.folders.length === 0) && (!res.files || res.files.length === 0)) {
+                    list.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 30px; color: #888;">Folder ini kosong.</td></tr>`;
+                }
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            loading.style.display = 'none';
+            Swal.fire({ icon: 'error', title: 'Gagal Memuat Folder', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    function goUpRemoteFolder() {
+        if (remoteParentFolderId) {
+            loadRemoteFolder(remoteParentFolderId);
+        }
+    }
+
+    function refreshRemoteFolder() {
+        loadRemoteFolder(currentRemoteFolderId);
+    }
+
+    async function createRemoteFolder() {
+        const { value: folderName } = await Swal.fire({
+            title: 'Buat Folder Baru di Remote',
+            input: 'text',
+            inputPlaceholder: 'Masukkan nama folder...',
+            showCancelButton: true,
+            background: '#111',
+            color: '#fff',
+            confirmButtonColor: 'var(--accent)',
+            inputValidator: (value) => {
+                if (!value) return 'Nama folder tidak boleh kosong!';
+            }
+        });
+
+        if (!folderName) return;
+
+        Swal.fire({ title: 'Membuat Folder...', background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const res = await sendRequest({
+                action: 'remote_proxy',
+                nodeId: activeNodeId,
+                remoteAction: 'create_folder',
+                parentId: currentRemoteFolderId,
+                name: folderName
+            });
+
+            if (res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Folder Dibuat!', text: `Folder "${folderName}" berhasil dibuat.`, background: '#111', color: '#fff', timer: 1500, showConfirmButton: false });
+                refreshRemoteFolder();
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Gagal Membuat Folder', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    async function searchRemoteDrive() {
+        const query = document.getElementById('explorerSearchInput').value.trim();
+        if (!query) {
+            refreshRemoteFolder();
+            return;
+        }
+
+        const loading = document.getElementById('explorerLoading');
+        const wrapper = document.getElementById('explorerTableWrapper');
+        const list = document.getElementById('explorerList');
+        
+        loading.style.display = 'block';
+        wrapper.style.display = 'none';
+        list.innerHTML = '';
+
+        try {
+            const res = await sendRequest({
+                action: 'remote_proxy',
+                nodeId: activeNodeId,
+                remoteAction: 'search',
+                query: query
+            });
+
+            loading.style.display = 'none';
+            wrapper.style.display = 'block';
+
+            if (res.status === 'success') {
+                document.getElementById('explorerPath').textContent = `Hasil Pencarian untuk: "${query}"`;
+                document.getElementById('explorerBackBtn').disabled = true;
+                document.getElementById('explorerBackBtn').style.opacity = '0.5';
+
+                // Render Folder
+                if (res.folders && res.folders.length > 0) {
+                    res.folders.forEach(folder => {
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+                        tr.innerHTML = `
+                            <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
+                            <td style="padding: 10px; color: #888;">-</td>
+                            <td style="padding: 10px; text-align: right;">
+                                <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
+                                <button class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2);" onclick="shareRemoteItem('${folder.id}', 'folder', '${folder.name}')">Share</button>
+                                <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${folder.id}', 'folder', '${folder.name}')">Salin</button>
+                                <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${folder.id}', 'folder', '${folder.name}')">Hapus</button>
+                            </td>
+                        `;
+                        list.appendChild(tr);
+                    });
+                }
+
+                // Render File
+                if (res.files && res.files.length > 0) {
+                    res.files.forEach(file => {
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+                        tr.innerHTML = `
+                            <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
+                            <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
+                            <td style="padding: 10px; text-align: right;">
+                                <button class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2);" onclick="shareRemoteItem('${file.id}', 'file', '${file.name}')">Share</button>
+                                <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${file.id}', 'file', '${file.name}')">Salin</button>
+                                <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${file.id}', 'file', '${file.name}')">Hapus</button>
+                            </td>
+                        `;
+                        list.appendChild(tr);
+                    });
+                }
+
+                if ((!res.folders || res.folders.length === 0) && (!res.files || res.files.length === 0)) {
+                    list.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 30px; color: #888;">Pencarian tidak menemukan item.</td></tr>`;
+                }
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            loading.style.display = 'none';
+            Swal.fire({ icon: 'error', title: 'Pencarian Gagal', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    async function deleteRemoteItem(itemId, itemType, itemName) {
+        const confirmDel = await Swal.fire({
+            title: `Hapus ${itemType === 'folder' ? 'Folder' : 'File'}?`,
+            text: `Apakah Anda yakin ingin menghapus "${itemName}" dari drive remote? (Akan dipindahkan ke Trash)`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--error)',
+            cancelButtonColor: 'var(--accent)',
+            confirmButtonText: 'Ya, Hapus!',
+            background: '#111',
+            color: '#fff'
+        });
+
+        if(!confirmDel.isConfirmed) return;
+
+        Swal.fire({ title: 'Menghapus Item...', background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const res = await sendRequest({
+                action: 'remote_proxy',
+                nodeId: activeNodeId,
+                remoteAction: 'delete_item',
+                itemId: itemId,
+                itemType: itemType
+            });
+
+            if (res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Berhasil Dihapus', text: `"${itemName}" dipindahkan ke Sampah.`, background: '#111', color: '#fff', timer: 1500, showConfirmButton: false });
+                refreshRemoteFolder();
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    async function shareRemoteItem(itemId, itemType, itemName) {
+        Swal.fire({ title: 'Membuka Akses Item...', background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const res = await sendRequest({
+                action: 'remote_proxy',
+                nodeId: activeNodeId,
+                remoteAction: 'share_item',
+                itemId: itemId,
+                itemType: itemType
+            });
+
+            if (res.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Akses Dibuka!',
+                    html: `<div style="text-align:left; font-size:0.9rem; color:#ccc; margin-top:10px;">
+                            Item <b>${itemName}</b> telah diatur ke: <br>
+                            <span style="color:#2ed573;">✔ Siapa saja dengan link dapat melihat (Anyone with link view)</span>.<br><br>
+                            Sekarang Anda dapat menyalin item ini ke akun utama dengan aman!
+                           </div>`,
+                    background: '#111',
+                    color: '#fff'
+                });
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Gagal Membagikan', text: err.message, background: '#111', color: '#fff' });
+        }
+    }
+
+    function copyRemoteItemToMain(itemId, itemType, itemName) {
+        // Tentukan link item
+        const link = itemType === 'folder' 
+            ? `https://drive.google.com/drive/folders/${itemId}`
+            : `https://drive.google.com/open?id=${itemId}`;
+        
+        // Pindahkan URL ke field Input Cloner utama
+        document.getElementById('folderUrls').value = link;
+        
+        // Switch tab ke Cloner
+        switchTab('cloner');
+        
+        // Tutup explorer
+        closeExplorer();
+        
+        // Munculkan notifikasi instruksi
+        Swal.fire({
+            icon: 'info',
+            title: 'Item Remote Disalin ke Cloner',
+            html: `<div style="text-align:left; font-size:0.95rem; color:#ccc;">
+                    Link remote item: <br><code style="color:var(--primary); font-size:0.8rem; word-break:break-all;">${link}</code><br><br>
+                    Telah dimasukkan ke input sumber cloner pada tab <b>Cloner</b>.<br>
+                    Silakan klik tombol <b>"Mulai Salin / Backup"</b> untuk memproses penduplikatan ke akun utama Anda!
+                   </div>`,
+            background: '#111',
+            color: '#fff'
+        });
     }
 
     // --- TAB 6: SCHEDULER ENGINE ---

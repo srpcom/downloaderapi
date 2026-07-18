@@ -100,6 +100,7 @@ function doPost(e) {
     if (action === 'get_remote_accounts') return handleGetRemoteAccounts(data);
     if (action === 'delete_remote_account') return handleDeleteRemoteAccount(data); 
     if (action === 'connect_remote_dest') return handleConnectRemoteDest(data);
+    if (action === 'remote_proxy') return handleRemoteProxy(data);
 
     // 6. SCHEDULER & LOGGING
     if (action === 'add_schedule_item') return handleAddScheduleItem(data);
@@ -705,10 +706,110 @@ function handleSearchDrive(data) {
 
 function handleBrowseFolders(data) { var p = data.parentId || "root"; var f = []; try { var parentFolder = (p === "root") ? DriveApp.getRootFolder() : DriveApp.getFolderById(p); var list = parentFolder.getFolders(); while(list.hasNext()) { var i = list.next(); f.push({ id: i.getId(), name: i.getName() }); } var parentOfCurrent = null; try { var parents = parentFolder.getParents(); if (parents.hasNext()) parentOfCurrent = parents.next().getId(); } catch(e) {} return responseJSON({ status:'success', folders:f, currentId: p==="root"?parentFolder.getId():p, currentName: parentFolder.getName(), parentId: parentOfCurrent }); } catch(e) { return responseJSON({ status:'error', message: e.message }); } }
 function handleCreateFolderTool(d) { try { return responseJSON({ status:'success', id: DriveApp.getFolderById(d.parentId).createFolder(d.name).getId() }); } catch(e) { return responseJSON({ status:'error', message: e.message }); } }
-function handleSaveRemoteAccount(data) { var url = data.targetUrl; var isScript = (url.indexOf("script.google.com") > -1); var email = "-"; try { if (isScript) { var res = UrlFetchApp.fetch(url, {method:'post', contentType:'application/json', payload:JSON.stringify({action:'get_server_info'}), muteHttpExceptions:true}); var r = JSON.parse(res.getContentText()); if (r.status === 'success') email = r.email; } var list = loadRemoteList() || []; list.push({ id: Utilities.getUuid(), label: data.label, url: url, type: isScript?'server':'link', email: email }); saveRemoteList(list); return responseJSON({ status: 'success', email: email }); } catch (e) { return responseJSON({ status: 'error', message: e.message }); } }
+function handleSaveRemoteAccount(data) {
+  var url = data.targetUrl;
+  var token = data.token || "";
+  var isScript = (url.indexOf("script.google.com") > -1);
+  var email = "-";
+  try {
+    if (isScript) {
+      var res = UrlFetchApp.fetch(url, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify({ action: 'get_server_info', token: token }),
+        muteHttpExceptions: true
+      });
+      var r = JSON.parse(res.getContentText());
+      if (r.status === 'success') {
+        email = r.email;
+      } else {
+        return responseJSON({ status: 'error', message: r.message || "Gagal menghubungkan ke remote node." });
+      }
+    }
+    var list = loadRemoteList() || [];
+    list.push({
+      id: Utilities.getUuid(),
+      label: data.label,
+      url: url,
+      token: token,
+      type: isScript ? 'server' : 'link',
+      email: email
+    });
+    saveRemoteList(list);
+    return responseJSON({ status: 'success', email: email });
+  } catch (e) {
+    return responseJSON({ status: 'error', message: "Koneksi gagal: " + e.message });
+  }
+}
 function handleGetRemoteAccounts(data) { return responseJSON({ status: 'success', list: loadRemoteList() || [] }); }
-function handleConnectRemoteDest(data) { try { if (data.targetUrl.indexOf("script.google.com") === -1) return responseJSON({ status: 'error', message: "URL bukan Server Script." }); var payload = { action: 'prepare_destination', requester: Session.getEffectiveUser().getEmail(), targetId: data.targetId || null, folderName: "Inbox Transfer" }; var response = UrlFetchApp.fetch(data.targetUrl, { method: 'post', contentType: 'application/json', payload: JSON.stringify(payload), muteHttpExceptions: true }); return ContentService.createTextOutput(response.getContentText()).setMimeType(ContentService.MimeType.JSON); } catch (e) { return responseJSON({ status: 'error', message: e.message }); } }
+function handleConnectRemoteDest(data) {
+  try {
+    var url = data.targetUrl;
+    if (url.indexOf("script.google.com") === -1) return responseJSON({ status: 'error', message: "URL bukan Server Script." });
+    var token = "";
+    var list = loadRemoteList() || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].url === url) {
+        token = list[i].token || "";
+        break;
+      }
+    }
+    var payload = {
+      action: 'prepare_destination',
+      token: token,
+      requester: Session.getEffectiveUser().getEmail(),
+      targetId: data.targetId || null,
+      folderName: "Inbox Transfer"
+    };
+    var response = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    return ContentService.createTextOutput(response.getContentText()).setMimeType(ContentService.MimeType.JSON);
+  } catch (e) {
+    return responseJSON({ status: 'error', message: e.message });
+  }
+}
 function handleBrowseRemote(data) { return handleBrowseFolders(data); }
+
+function handleRemoteProxy(data) {
+  try {
+    var nodeId = data.nodeId;
+    var list = loadRemoteList() || [];
+    var node = null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === nodeId) {
+        node = list[i];
+        break;
+      }
+    }
+    if (!node) return responseJSON({ status: 'error', message: "Node remote tidak ditemukan." });
+    
+    var payload = {
+      action: data.remoteAction,
+      token: node.token || ""
+    };
+    
+    if (data.parentId) payload.parentId = data.parentId;
+    if (data.name) payload.name = data.name;
+    if (data.query) payload.query = data.query;
+    if (data.itemId) payload.itemId = data.itemId;
+    if (data.itemType) payload.itemType = data.itemType;
+    
+    var response = UrlFetchApp.fetch(node.url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    
+    return ContentService.createTextOutput(response.getContentText()).setMimeType(ContentService.MimeType.JSON);
+  } catch(e) {
+    return responseJSON({ status: 'error', message: e.message });
+  }
+}
 function handleUnlockFiles(data) { var ids = data.ids || []; var c = 0; for (var i = 0; i < ids.length; i++) { try { DriveApp.getFileById(ids[i]).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); c++; } catch(e) {} } return responseJSON({ status: 'success', unlocked: c }); }
 function handleCheckQuota() { try { return responseJSON({ status: 'success', emailQuota: MailApp.getRemainingDailyQuota(), driveUsed: formatBytes(DriveApp.getStorageUsed()) }); } catch(e) { return responseJSON({ status: 'error', message: e.message }); } }
 function sendTelegramNotification(text) { if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return; try { UrlFetchApp.fetch("https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage", { method: "post", payload: JSON.stringify({ "chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML", "disable_web_page_preview": true }), contentType: "application/json" }); } catch (e) {} }
