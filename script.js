@@ -12,7 +12,7 @@ var SCRIPT_PROP = PropertiesService.getScriptProperties();
 var DEFAULT_DEST_ID = SCRIPT_PROP.getProperty('DEFAULT_DEST_ID') || "1bG8M11VUfGcW5_FIjWiuoURL9QlnQZPS"; // ID Folder Tujuan Default
 var LOG_SHEET_ID = SCRIPT_PROP.getProperty('LOG_SHEET_ID') || "181frqAI898WbVdFkp2AufEhHCfwXDhBhWBQ3CzBnUWo"; // ID Spreadsheet Log
 var LOG_SHEET_GID = Number(SCRIPT_PROP.getProperty('LOG_SHEET_GID')) || 587199847; 
-var ALLOWED_EMAILS = SCRIPT_PROP.getProperty('ALLOWED_EMAILS') || "syamsul18782@gmail.com,comsrp@gmail.com"; // Email yang diizinkan Login
+var ALLOWED_EMAILS = SCRIPT_PROP.getProperty('ALLOWED_EMAILS') || "syamsul18782@gmail.com"; // Email yang diizinkan Login
 
 var SYSTEM_FOLDER_NAME = "G-Drive_System_Config";
 var SCHEDULE_CONFIG_FILENAME = "schedule_config_list.json";
