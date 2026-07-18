@@ -676,10 +676,10 @@
 <body>
 
 <div id="ssoOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 9, 26, 0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
-    <div style="background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 50px 40px; width: 90%; max-width: 420px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); text-align: center;">
-        <div style="font-size: 3rem; margin-bottom: 20px;">🔐</div>
+    <div style="background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 30px; width: 90%; max-width: 420px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 15px;">🔐</div>
         <h2 style="margin-bottom: 10px; color: white; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.8rem; letter-spacing: -0.5px;">Akses Terbatas</h2>
-        <p style="margin-bottom: 35px; color: #a0a0b0; font-family: 'Poppins', sans-serif; font-size: 0.95rem; line-height: 1.6;">Silakan masuk menggunakan akun Google Anda untuk mengakses G-Drive Ultimate.</p>
+        <p style="margin-bottom: 25px; color: #a0a0b0; font-family: 'Poppins', sans-serif; font-size: 0.9rem; line-height: 1.5;">Silakan masuk menggunakan akun Google Anda atau masukkan password akses.</p>
         <div style="display: flex; justify-content: center; width: 100%;">
             <div id="g_id_onload"
                  data-client_id="404619775216-omjf6cn7j82kdnmev20rr9vp11hr7fka.apps.googleusercontent.com"
@@ -697,13 +697,24 @@
                  data-logo_alignment="left">
             </div>
         </div>
+        <div style="display: flex; align-items: center; justify-content: center; margin: 20px 0; color: #888; font-size: 0.85rem; font-family: 'Poppins', sans-serif;">
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1); margin-right: 10px;"></div>
+            <span>ATAU</span>
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1); margin-left: 10px;"></div>
+        </div>
+        <div style="text-align: left; font-family: 'Poppins', sans-serif;">
+            <div style="margin-bottom: 15px;">
+                <input type="password" id="loginPassword" placeholder="Masukkan Password..." style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; font-size: 0.95rem; outline: none; box-sizing: border-box; transition: border 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+            </div>
+            <button onclick="handlePasswordLogin()" style="width: 100%; padding: 12px; border-radius: 12px; border: none; background: linear-gradient(135deg, #00d2ff, #0081ff); color: white; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">Masuk dengan Password</button>
+        </div>
     </div>
 </div>
 
 <div id="tsparticles"></div>
 
 <div class="container">
-    <div class="lock-indicator" id="lockBtn" onclick="promptPinChange()" title="Logout / Ganti Akun SSO">🔒</div>
+    <div class="lock-indicator" id="lockBtn" onclick="promptPinChange()" title="Logout / Ganti Akses">🔒</div>
     
     <header>
         <h1>G-Drive Ultimate</h1>
@@ -1043,6 +1054,7 @@
 
     // Muat atau Inisialisasi API Key & PIN dari LocalStorage
     let ssoToken = localStorage.getItem('gdrive_sso_token') || '';
+    let loginPassword = localStorage.getItem('gdrive_login_password') || '';
     if (localStorage.getItem('gemini_api_key')) {
         document.getElementById('geminiApiKey').value = localStorage.getItem('gemini_api_key');
     }
@@ -1100,7 +1112,10 @@
                 ssoToken = '';
                 localStorage.removeItem('gdrive_sso_token');
             }
+        } else if (loginPassword) {
+            isValid = true;
         }
+        
         if (!isValid) {
             document.getElementById('ssoOverlay').style.display = 'flex';
             if (container) container.style.display = 'none';
@@ -1153,6 +1168,8 @@
             const res = await sendRequest({ action: 'verify_auth' });
             if (res.status === 'success') {
                 localStorage.setItem('gdrive_sso_token', ssoToken);
+                loginPassword = '';
+                localStorage.removeItem('gdrive_login_password');
                 checkAndPromptPin();
                 Swal.fire({ icon: 'success', title: 'Login Berhasil!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
                 loadRemoteNodes();
@@ -1174,10 +1191,52 @@
         }
     }
 
+    async function handlePasswordLogin() {
+        const pwdInput = document.getElementById('loginPassword').value.trim();
+        if (!pwdInput) {
+            Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Password tidak boleh kosong.', background: '#111', color: '#fff' });
+            return;
+        }
+        
+        Swal.fire({
+            title: 'Memverifikasi Password...',
+            allowOutsideClick: false,
+            background: '#111',
+            color: '#fff',
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            loginPassword = pwdInput;
+            const res = await sendRequest({ action: 'verify_auth' });
+            if (res.status === 'success') {
+                localStorage.setItem('gdrive_login_password', loginPassword);
+                ssoToken = '';
+                localStorage.removeItem('gdrive_sso_token');
+                checkAndPromptPin();
+                Swal.fire({ icon: 'success', title: 'Login Berhasil!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
+                loadRemoteNodes();
+                loadScheduleList();
+            } else {
+                throw new Error(res.message || 'Password salah');
+            }
+        } catch (err) {
+            loginPassword = '';
+            Swal.fire({
+                icon: 'error',
+                title: 'Akses Ditolak!',
+                text: err.message,
+                background: '#111',
+                color: '#fff'
+            });
+            checkAndPromptPin();
+        }
+    }
+
     function promptPinChange(isFirstLoad = false) {
         Swal.fire({
-            title: 'Logout / Ganti Akun',
-            text: 'Anda akan keluar dari sesi Google SSO Anda saat ini.',
+            title: 'Logout / Ganti Sesi',
+            text: 'Anda akan keluar dari sesi login saat ini.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Ya, Logout',
@@ -1188,7 +1247,9 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 ssoToken = '';
+                loginPassword = '';
                 localStorage.removeItem('gdrive_sso_token');
+                localStorage.removeItem('gdrive_login_password');
                 checkAndPromptPin();
             }
         });
@@ -1246,9 +1307,13 @@
     // Request helper
     async function sendRequest(payload) {
         const url = getScriptUrl();
+        const bodyPayload = { ...payload };
+        if (ssoToken) bodyPayload.sso_token = ssoToken;
+        if (loginPassword) bodyPayload.password = loginPassword;
+        
         const response = await fetch(url, {
             method: 'POST',
-            body: JSON.stringify({ ...payload, sso_token: ssoToken }),
+            body: JSON.stringify(bodyPayload),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         return await response.json();
@@ -1259,7 +1324,7 @@
         const rawText = document.getElementById('folderUrls').value;
         const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
 
-        if (!ssoToken) { Swal.fire({ icon: 'error', title: 'Belum Login', text: 'Silakan login dengan Google SSO.' }); return; }
+        if (!ssoToken && !loginPassword) { Swal.fire({ icon: 'error', title: 'Belum Login', text: 'Silakan login terlebih dahulu.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan setidaknya satu link Google Drive.' }); return; }
 
         Swal.fire({
@@ -1317,7 +1382,7 @@
         if (renamePrefix === "") renamePrefix = "[MOVED] ";
         if (!renamePrefix.endsWith(" ") && !renamePrefix.endsWith("_") && !renamePrefix.endsWith("-")) renamePrefix += " ";
 
-        if (!ssoToken) { Swal.fire({ icon: 'error', title: 'Belum Login', text: 'Silakan login dengan Google SSO.' }); return; }
+        if (!ssoToken && !loginPassword) { Swal.fire({ icon: 'error', title: 'Belum Login', text: 'Silakan login terlebih dahulu.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder Google Drive terlebih dahulu.' }); return; }
 
         const config = {
@@ -1357,7 +1422,7 @@
         startTimer();
         
         currentSessionLogs = [];
-        addLog(`🔐 Autentikasi SSO Berhasil | Mode: ${config.mode.toUpperCase()}`, 'info');
+        addLog(`🔐 Autentikasi Berhasil | Mode: ${config.mode.toUpperCase()}`, 'info');
         
         if (destUrl) addLog(`📂 Folder Target Kustom Dideteksi`, 'info');
         else addLog(`📂 Menggunakan Folder Target Default`, 'info');
@@ -1430,7 +1495,12 @@
             } catch (error) {
                 failCount++;
                 addLog(`❌ Gagal menyalin: ${error.message}`, 'error');
-                if(error.message.includes("PIN") || error.message.includes("Akses Ditolak")) {
+                if(error.message.includes("PIN") || error.message.includes("Akses Ditolak") || error.message.includes("Kredensial tidak valid")) {
+                    ssoToken = '';
+                    loginPassword = '';
+                    localStorage.removeItem('gdrive_sso_token');
+                    localStorage.removeItem('gdrive_login_password');
+                    checkAndPromptPin();
                     setUIState('stopped');
                     stopTimer();
                     return;
@@ -1890,7 +1960,7 @@
 
     // --- TAB 5: REMOTE NODES ---
     async function loadRemoteNodes() {
-        if(!ssoToken) return;
+        if(!ssoToken && !loginPassword) return;
         try {
             const res = await sendRequest({ action: 'get_remote_accounts' });
             const tbody = document.getElementById('remoteList');
@@ -1994,7 +2064,7 @@
 
     // --- TAB 6: SCHEDULER ENGINE ---
     async function loadScheduleList() {
-        if(!ssoToken) return;
+        if(!ssoToken && !loginPassword) return;
         try {
             const res = await sendRequest({ action: 'get_schedule_list' });
             const tbody = document.getElementById('scheduleList');

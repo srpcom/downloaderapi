@@ -41,13 +41,31 @@ function doPost(e) {
     var failedCount = Number(cache.get('failed_attempts') || 0);
     if (failedCount >= 20) return responseJSON({ status: 'error', message: "⛔ Locked." });
 
-    // Verifikasi semua action dengan SSO
-    if (!data.sso_token) return responseJSON({ status: 'error', message: "Silakan login menggunakan Google SSO." });
-    var email = verifyToken(data.sso_token);
-    var allowedArr = ALLOWED_EMAILS.split(',').map(function(e){ return e.trim().toLowerCase(); });
-    if (!email || allowedArr.indexOf(email.toLowerCase()) === -1) {
+    // Verifikasi semua action dengan SSO atau Password
+    if (!data.sso_token && !data.password) return responseJSON({ status: 'error', message: "Silakan login menggunakan Google SSO atau Password." });
+    
+    var authorized = false;
+    var userEmail = "";
+    
+    if (data.sso_token) {
+      var email = verifyToken(data.sso_token);
+      if (email && email.toLowerCase() === 'syamsul18782@gmail.com') {
+         authorized = true;
+         userEmail = email;
+      }
+    }
+    
+    if (data.password) {
+      var defaultPassword = SCRIPT_PROP.getProperty('ACCESS_PIN') || "1"; // Default password adalah "1"
+      if (String(data.password) === String(defaultPassword)) {
+         authorized = true;
+         userEmail = "Admin Password Session";
+      }
+    }
+    
+    if (!authorized) {
        cache.put('failed_attempts', String(failedCount+1), 600);
-       return responseJSON({ status: 'error', message: "Akses Ditolak! Email Anda (" + (email || "Tidak Valid") + ") tidak memiliki izin." });
+       return responseJSON({ status: 'error', message: "Akses Ditolak! Kredensial tidak valid." });
     } else { if (failedCount > 0) cache.remove('failed_attempts'); }
 
     // --- ROUTING MENU ---
@@ -56,7 +74,7 @@ function doPost(e) {
     if (action === 'gemini_ai') return handleGeminiAI(data);
 
     // 2. AUTH & CORE
-    if (action === 'verify_auth') return responseJSON({ status: 'success', message: "Login OK" });
+    if (action === 'verify_auth') return responseJSON({ status: 'success', message: "Login OK", email: userEmail });
     if (action === 'verify_pin') return responseJSON({ status: 'success', message: "Login OK" });
     if (action === 'initialize') return handleInitialize(data);
     if (action === 'process_batch') return handleBatch(data.jobId);
