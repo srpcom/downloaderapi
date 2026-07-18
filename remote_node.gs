@@ -219,14 +219,30 @@ function doPost(e) {
     if (action === 'share_item') {
       var itemId = data.itemId;
       var itemType = data.itemType;
+      var perm = data.permission || 'view'; // 'private', 'view', 'edit'
+      
+      var access = DriveApp.Access.ANYONE_WITH_LINK;
+      var permission = DriveApp.Permission.VIEW;
+      var msg = "Akses diubah menjadi: Siapa saja dengan link dapat melihat.";
+      
+      if (perm === 'private') {
+        access = DriveApp.Access.PRIVATE;
+        permission = DriveApp.Permission.NONE;
+        msg = "Akses diubah menjadi: Privat (Hanya pemilik yang dapat mengakses).";
+      } else if (perm === 'edit') {
+        access = DriveApp.Access.ANYONE_WITH_LINK;
+        permission = DriveApp.Permission.EDIT;
+        msg = "Akses diubah menjadi: Siapa saja dengan link dapat mengedit.";
+      }
+      
       if (itemType === 'folder') {
         var folder = DriveApp.getFolderById(itemId);
-        folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        folder.setSharing(access, permission);
       } else {
         var file = DriveApp.getFileById(itemId);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        file.setSharing(access, permission);
       }
-      return responseJSON({ status: 'success', message: "Akses berhasil dibuka. Siapa saja dengan link dapat melihat/menyalin." });
+      return responseJSON({ status: 'success', message: msg });
     }
     
     if (action === 'prepare_destination') {

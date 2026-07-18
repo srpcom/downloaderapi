@@ -2274,7 +2274,12 @@
                             <td style="padding: 10px; color: #888;">-</td>
                             <td style="padding: 10px; text-align: right;">
                                 <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
-                                <button class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2);" onclick="shareRemoteItem('${folder.id}', 'folder', '${folder.name}')">Share</button>
+                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 6px;" onchange="changeRemoteShare(this, '${folder.id}', 'folder', '${folder.name}')">
+                                    <option value="" disabled selected hidden>Share</option>
+                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
+                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
+                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
+                                </select>
                                 <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${folder.id}', 'folder', '${folder.name}')">Salin</button>
                                 <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${folder.id}', 'folder', '${folder.name}')">Hapus</button>
                             </td>
@@ -2292,7 +2297,12 @@
                             <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
                             <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
                             <td style="padding: 10px; text-align: right;">
-                                <button class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2);" onclick="shareRemoteItem('${file.id}', 'file', '${file.name}')">Share</button>
+                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 6px;" onchange="changeRemoteShare(this, '${file.id}', 'file', '${file.name}')">
+                                    <option value="" disabled selected hidden>Share</option>
+                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
+                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
+                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
+                                </select>
                                 <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${file.id}', 'file', '${file.name}')">Salin</button>
                                 <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${file.id}', 'file', '${file.name}')">Hapus</button>
                             </td>
@@ -2402,7 +2412,12 @@
                             <td style="padding: 10px; color: #888;">-</td>
                             <td style="padding: 10px; text-align: right;">
                                 <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
-                                <button class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2);" onclick="shareRemoteItem('${folder.id}', 'folder', '${folder.name}')">Share</button>
+                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 6px;" onchange="changeRemoteShare(this, '${folder.id}', 'folder', '${folder.name}')">
+                                    <option value="" disabled selected hidden>Share</option>
+                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
+                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
+                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
+                                </select>
                                 <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${folder.id}', 'folder', '${folder.name}')">Salin</button>
                                 <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${folder.id}', 'folder', '${folder.name}')">Hapus</button>
                             </td>
@@ -2420,7 +2435,12 @@
                             <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
                             <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
                             <td style="padding: 10px; text-align: right;">
-                                <button class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2);" onclick="shareRemoteItem('${file.id}', 'file', '${file.name}')">Share</button>
+                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 6px;" onchange="changeRemoteShare(this, '${file.id}', 'file', '${file.name}')">
+                                    <option value="" disabled selected hidden>Share</option>
+                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
+                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
+                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
+                                </select>
                                 <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${file.id}', 'file', '${file.name}')">Salin</button>
                                 <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${file.id}', 'file', '${file.name}')">Hapus</button>
                             </td>
@@ -2478,8 +2498,21 @@
         }
     }
 
-    async function shareRemoteItem(itemId, itemType, itemName) {
-        Swal.fire({ title: 'Membuka Akses Item...', background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+    async function changeRemoteShare(selectElem, itemId, itemType, itemName) {
+        const perm = selectElem.value;
+        if (!perm) return;
+        
+        let labelPerm = "Hanya Lihat";
+        if (perm === 'private') labelPerm = "Privat";
+        if (perm === 'edit') labelPerm = "Editor (Bisa Edit)";
+
+        Swal.fire({
+            title: 'Mengubah Akses...',
+            text: `Mengubah akses "${itemName}" menjadi ${labelPerm}...`,
+            background: '#111',
+            color: '#fff',
+            didOpen: () => { Swal.showLoading(); }
+        });
 
         try {
             const res = await sendRequest({
@@ -2487,18 +2520,15 @@
                 nodeId: activeNodeId,
                 remoteAction: 'share_item',
                 itemId: itemId,
-                itemType: itemType
+                itemType: itemType,
+                permission: perm
             });
 
             if (res.status === 'success') {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Akses Dibuka!',
-                    html: `<div style="text-align:left; font-size:0.9rem; color:#ccc; margin-top:10px;">
-                            Item <b>${itemName}</b> telah diatur ke: <br>
-                            <span style="color:#2ed573;">✔ Siapa saja dengan link dapat melihat (Anyone with link view)</span>.<br><br>
-                            Sekarang Anda dapat menyalin item ini ke akun utama dengan aman!
-                           </div>`,
+                    title: 'Akses Diperbarui!',
+                    text: res.message,
                     background: '#111',
                     color: '#fff'
                 });
@@ -2506,7 +2536,10 @@
                 throw new Error(res.message);
             }
         } catch(err) {
-            Swal.fire({ icon: 'error', title: 'Gagal Membagikan', text: err.message, background: '#111', color: '#fff' });
+            Swal.fire({ icon: 'error', title: 'Gagal Mengubah Akses', text: err.message, background: '#111', color: '#fff' });
+        } finally {
+            // Reset dropdown back to placeholder
+            selectElem.value = "";
         }
     }
 
