@@ -1067,13 +1067,24 @@
 
     function decodeJwt(token) {
         try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            if (!token) return null;
+            const parts = token.split('.');
+            if (parts.length < 2) return null;
+            const base64Url = parts[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            // Pad base64
+            const pad = base64.length % 4;
+            if (pad === 2) {
+                base64 += '==';
+            } else if (pad === 3) {
+                base64 += '=';
+            }
             const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
             return JSON.parse(jsonPayload);
         } catch (e) {
+            console.error("JWT Decode Error:", e);
             return null;
         }
     }
@@ -1102,11 +1113,24 @@
     async function handleCredentialResponse(response) {
         const token = response.credential;
         const payload = decodeJwt(token);
-        if (!payload || !payload.email || payload.email.toLowerCase() !== 'syamsul18782@gmail.com') {
+        if (!payload) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Login',
+                text: 'Gagal mendecode data token dari Google. Silakan coba lagi.',
+                background: '#111',
+                color: '#fff'
+            });
+            ssoToken = '';
+            localStorage.removeItem('gdrive_sso_token');
+            checkAndPromptPin();
+            return;
+        }
+        if (!payload.email || payload.email.toLowerCase() !== 'syamsul18782@gmail.com') {
             Swal.fire({
                 icon: 'error',
                 title: 'Akses Ditolak!',
-                text: 'Email Anda (' + (payload?.email || 'Tidak Diketahui') + ') tidak diizinkan masuk ke aplikasi ini.',
+                text: 'Email Anda (' + payload.email + ') tidak diizinkan masuk ke aplikasi ini. Hanya syamsul18782@gmail.com yang diizinkan.',
                 background: '#111',
                 color: '#fff'
             });
