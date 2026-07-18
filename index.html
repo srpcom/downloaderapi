@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.0/tsparticles.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <style>
         :root {
@@ -674,10 +675,32 @@
 </head>
 <body>
 
+<div id="ssoOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 12, 41, 0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+    <div style="background: rgba(0,0,0,0.5); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+        <h2 style="margin-bottom: 20px; color: white;">🔐 Akses Terbatas</h2>
+        <p style="margin-bottom: 30px; color: #ccc;">Silakan masuk menggunakan akun Google Anda.</p>
+        <div id="g_id_onload"
+             data-client_id="404619775216-omjf6cn7j82kdnmev20rr9vp11hr7fka.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
+    </div>
+</div>
+
 <div id="tsparticles"></div>
 
 <div class="container">
-    <div class="lock-indicator" id="lockBtn" onclick="promptPinChange()" title="Ubah PIN / Kunci Halaman">🔒</div>
+    <div class="lock-indicator" id="lockBtn" onclick="promptPinChange()" title="Logout / Ganti Akun SSO">🔒</div>
     
     <header>
         <h1>G-Drive Ultimate</h1>
@@ -797,7 +820,7 @@
     <div class="tab-content" id="tab-upload">
         <div class="form-group">
             <label for="uploadDest">Folder Tujuan Upload (Opsional)</label>
-            <input type="text" id="uploadDest" placeholder="ID atau Link Folder Drive (jika kosong = Default)">
+            <input type="text" id="uploadDest" placeholder="Nama, ID, atau Link Folder (Jika belum ada, otomatis dibuat)">
         </div>
 
         <div class="upload-zone" id="dropZone" onclick="triggerFileInput()">
@@ -1016,7 +1039,7 @@
     const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4RFANjPjkHL6nuMbNBtRUf3cRtQ5vz2DpIUF6mql8z4PMRgFxBKeTWVX_4pQUGENa/exec";
 
     // Muat atau Inisialisasi API Key & PIN dari LocalStorage
-    let userPin = localStorage.getItem('gdrive_pin') || '';
+    let ssoToken = localStorage.getItem('gdrive_sso_token') || '';
     if (localStorage.getItem('gemini_api_key')) {
         document.getElementById('geminiApiKey').value = localStorage.getItem('gemini_api_key');
     }
@@ -1040,43 +1063,38 @@
     }
 
     function checkAndPromptPin() {
-        if (!userPin) {
-            promptPinChange(true);
+        if (!ssoToken) {
+            document.getElementById('ssoOverlay').style.display = 'flex';
+        } else {
+            document.getElementById('ssoOverlay').style.display = 'none';
         }
+    }
+
+    function handleCredentialResponse(response) {
+        ssoToken = response.credential;
+        localStorage.setItem('gdrive_sso_token', ssoToken);
+        document.getElementById('ssoOverlay').style.display = 'none';
+        Swal.fire({ icon: 'success', title: 'Login Berhasil!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
+        loadRemoteNodes();
+        loadScheduleList();
     }
 
     function promptPinChange(isFirstLoad = false) {
         Swal.fire({
-            title: isFirstLoad ? '🔐 Selamat Datang' : '🔐 Ubah PIN Akses',
-            text: 'Masukkan PIN akses keamanan aplikasi Anda:',
-            input: 'password',
-            inputPlaceholder: 'Masukkan PIN Anda...',
-            inputAttributes: {
-                autocapitalize: 'off',
-                autocorrect: 'off'
-            },
-            showCancelButton: !isFirstLoad,
-            confirmButtonText: 'Verifikasi',
+            title: 'Logout / Ganti Akun',
+            text: 'Anda akan keluar dari sesi Google SSO Anda saat ini.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Logout',
             cancelButtonText: 'Batal',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
             background: '#111',
             color: '#fff',
-            confirmButtonColor: '#00d2ff'
+            confirmButtonColor: '#ff4757'
         }).then((result) => {
             if (result.isConfirmed) {
-                if (result.value) {
-                    userPin = result.value;
-                    localStorage.setItem('gdrive_pin', userPin);
-                    Swal.fire({ icon: 'success', title: 'PIN Disimpan!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
-                    // Refresh data remote dan scheduler
-                    loadRemoteNodes();
-                    loadScheduleList();
-                } else {
-                    Swal.fire({ icon: 'error', title: 'PIN tidak boleh kosong', background: '#111', color: '#fff' }).then(() => {
-                        checkAndPromptPin();
-                    });
-                }
+                ssoToken = '';
+                localStorage.removeItem('gdrive_sso_token');
+                checkAndPromptPin();
             }
         });
     }
@@ -1135,7 +1153,7 @@
         const url = getScriptUrl();
         const response = await fetch(url, {
             method: 'POST',
-            body: JSON.stringify({ ...payload, pin: userPin }),
+            body: JSON.stringify({ ...payload, sso_token: ssoToken }),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         return await response.json();
@@ -1146,7 +1164,7 @@
         const rawText = document.getElementById('folderUrls').value;
         const urls = rawText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
 
-        if (!userPin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses Anda di bagian kanan atas.' }); return; }
+        if (!ssoToken) { Swal.fire({ icon: 'error', title: 'Belum Login', text: 'Silakan login dengan Google SSO.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan setidaknya satu link Google Drive.' }); return; }
 
         Swal.fire({
@@ -1204,7 +1222,7 @@
         if (renamePrefix === "") renamePrefix = "[MOVED] ";
         if (!renamePrefix.endsWith(" ") && !renamePrefix.endsWith("_") && !renamePrefix.endsWith("-")) renamePrefix += " ";
 
-        if (!userPin) { Swal.fire({ icon: 'error', title: 'PIN Kosong', text: 'Masukkan PIN akses keamanan Anda.' }); return; }
+        if (!ssoToken) { Swal.fire({ icon: 'error', title: 'Belum Login', text: 'Silakan login dengan Google SSO.' }); return; }
         if (urls.length === 0) { Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Masukkan link file/folder Google Drive terlebih dahulu.' }); return; }
 
         const config = {
@@ -1244,7 +1262,7 @@
         startTimer();
         
         currentSessionLogs = [];
-        addLog(`🔐 Autentikasi PIN Berhasil | Mode: ${config.mode.toUpperCase()}`, 'info');
+        addLog(`🔐 Autentikasi SSO Berhasil | Mode: ${config.mode.toUpperCase()}`, 'info');
         
         if (destUrl) addLog(`📂 Folder Target Kustom Dideteksi`, 'info');
         else addLog(`📂 Menggunakan Folder Target Default`, 'info');
@@ -1777,7 +1795,7 @@
 
     // --- TAB 5: REMOTE NODES ---
     async function loadRemoteNodes() {
-        if(!userPin) return;
+        if(!ssoToken) return;
         try {
             const res = await sendRequest({ action: 'get_remote_accounts' });
             const tbody = document.getElementById('remoteList');
@@ -1881,7 +1899,7 @@
 
     // --- TAB 6: SCHEDULER ENGINE ---
     async function loadScheduleList() {
-        if(!userPin) return;
+        if(!ssoToken) return;
         try {
             const res = await sendRequest({ action: 'get_schedule_list' });
             const tbody = document.getElementById('scheduleList');

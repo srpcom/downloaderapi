@@ -12,7 +12,7 @@ var SCRIPT_PROP = PropertiesService.getScriptProperties();
 var DEFAULT_DEST_ID = SCRIPT_PROP.getProperty('DEFAULT_DEST_ID') || "1bG8M11VUfGcW5_FIjWiuoURL9QlnQZPS"; // ID Folder Tujuan Default
 var LOG_SHEET_ID = SCRIPT_PROP.getProperty('LOG_SHEET_ID') || "181frqAI898WbVdFkp2AufEhHCfwXDhBhWBQ3CzBnUWo"; // ID Spreadsheet Log
 var LOG_SHEET_GID = Number(SCRIPT_PROP.getProperty('LOG_SHEET_GID')) || 587199847; 
-var ACCESS_PIN = SCRIPT_PROP.getProperty('ACCESS_PIN') || "1"; // PIN Akses
+var ALLOWED_EMAILS = SCRIPT_PROP.getProperty('ALLOWED_EMAILS') || "syamsul18782@gmail.com,comsrp@gmail.com"; // Email yang diizinkan Login
 
 var SYSTEM_FOLDER_NAME = "G-Drive_System_Config";
 var SCHEDULE_CONFIG_FILENAME = "schedule_config_list.json";
@@ -41,11 +41,14 @@ function doPost(e) {
     var failedCount = Number(cache.get('failed_attempts') || 0);
     if (failedCount >= 20) return responseJSON({ status: 'error', message: "⛔ Locked." });
 
-    // Beberapa action tidak butuh PIN ketat (public info)
+    // Beberapa action tidak butuh SSO ketat (public info)
     if (action !== 'get_schedule_list' && action !== 'check_quota' && action !== 'get_remote_accounts') {
-         if (String(data.pin) !== String(ACCESS_PIN)) {
+         if (!data.sso_token) return responseJSON({ status: 'error', message: "Silakan login menggunakan Google SSO." });
+         var email = verifyToken(data.sso_token);
+         var allowedArr = ALLOWED_EMAILS.split(',').map(function(e){ return e.trim().toLowerCase(); });
+         if (!email || allowedArr.indexOf(email.toLowerCase()) === -1) {
             cache.put('failed_attempts', String(failedCount+1), 600);
-            return responseJSON({ status: 'error', message: "PIN Salah!" });
+            return responseJSON({ status: 'error', message: "Akses Ditolak! Email Anda (" + (email || "Tidak Valid") + ") tidak memiliki izin." });
          } else { if (failedCount > 0) cache.remove('failed_attempts'); }
     }
 
@@ -214,45 +217,67 @@ function callGeminiLLM(key, prompt) {
 
 function handleCheckStats(data) {
   var id = extractIdFromUrl(data.url);
+  var rk = extractResourceKeyFromUrl(data.url);
   if (!id) return responseJSON({ status: 'error', message: "URL Invalid" });
   try {
-    var f = Drive.Files.get(id, {fields: "name, mimeType, size, capabilities, owners, shared", supportsAllDrives: true});
-    var isFolder = (f.mimeType.indexOf('folder') > -1);
+    var isFolder = true;
+    var item;
+    try {
+      item = rk ? DriveApp.getFolderByIdAndResourceKey(id, rk) : DriveApp.getFolderById(id);
+    } catch (e) {
+      try {
+        item = rk ? DriveApp.getFileByIdAndResourceKey(id, rk) : DriveApp.getFileById(id);
+        isFolder = false;
+      } catch (err) {
+        return responseJSON({ status: 'error', message: "Item tidak ditemukan atau tidak memiliki akses." });
+      }
+    }
+    
+    var name = item.getName();
+    var ownerEmail = "-";
+    try {
+      var owner = item.getOwner();
+      if (owner) ownerEmail = owner.getEmail();
+    } catch (e) {}
+    
+    var canEdit = false;
+    try {
+      var access = item.getAccess(Session.getActiveUser());
+      canEdit = (access === DriveApp.Permission.EDIT || access === DriveApp.Permission.OWNER);
+    } catch (e) {}
     
     // Hitung tipe sharing access
     var sharingAccess = "Private";
     try {
-      var item = isFolder ? DriveApp.getFolderById(id) : DriveApp.getFileById(id);
       var sa = item.getSharingAccess();
       if (sa === DriveApp.Access.ANYONE || sa === DriveApp.Access.ANYONE_WITH_LINK) {
         sharingAccess = "Public (Anyone with link)";
       } else if (sa === DriveApp.Access.DOMAIN || sa === DriveApp.Access.DOMAIN_WITH_LINK) {
         sharingAccess = "Domain Shared";
-      } else if (f.shared) {
+      } else {
         sharingAccess = "Shared (Specific People)";
       }
     } catch(e) {
-      if (f.shared) {
-        sharingAccess = "Shared";
-      }
+      sharingAccess = "Shared";
     }
     
-    var perm = (f.capabilities.canEdit ? "Writer" : "Viewer") + " | " + sharingAccess;
-    var totalSize = parseInt(f.size || 0);
+    var perm = (canEdit ? "Writer" : "Viewer") + " | " + sharingAccess;
+    var totalSize = 0;
     var totalFiles = 1;
     var isApprox = true;
 
     if (isFolder) {
         try {
-            var folder = DriveApp.getFolderById(id);
-            var stats = scanFolderRecursive(folder, null, null, true, null, false);
+            var stats = scanFolderRecursive(item, null, null, true, null, false);
             totalSize = stats.size;
             totalFiles = stats.count;
             isApprox = false; 
         } catch(e) {}
+    } else {
+        totalSize = item.getSize();
     }
 
-    return responseJSON({ status: 'success', name: f.name, type: isFolder ? 'folder' : 'file', access: perm, ownerEmail: (f.owners && f.owners[0]) ? f.owners[0].emailAddress : "-", stats: { files: totalFiles, size: formatBytes(totalSize) + (isFolder && isApprox ? " (Meta)" : "") } });
+    return responseJSON({ status: 'success', name: name, type: isFolder ? 'folder' : 'file', access: perm, ownerEmail: ownerEmail, stats: { files: totalFiles, size: formatBytes(totalSize) + (isFolder && isApprox ? " (Meta)" : "") } });
   } catch(e) { return responseJSON({ status: 'error', message: e.message }); }
 }
 
@@ -263,6 +288,7 @@ function handleInitialize(data) {
   try {
     var sourceUrl = data.url; 
     var sourceId = extractIdFromUrl(sourceUrl);
+    var rk = extractResourceKeyFromUrl(sourceUrl);
     if (!sourceId) return responseJSON({ status: 'error', message: "URL Invalid" });
     
     var targetParentId = DEFAULT_DEST_ID; 
@@ -277,15 +303,34 @@ function handleInitialize(data) {
         if (eid) targetParentId = eid; 
     }
     
-    var isFolder = false; var sourceItem = null; var sourceName = ""; var sourceOwner = "-"; var sourceAccess = "Restricted";
+    var isFolder = true; var sourceItem = null; var sourceName = ""; var sourceOwner = "-"; var sourceAccess = "Restricted";
     try {
-      var itemMeta = Drive.Files.get(sourceId, {fields: "id, name, mimeType, owners, capabilities", supportsAllDrives: true});
-      sourceName = itemMeta.name;
-      if(itemMeta.owners && itemMeta.owners.length > 0) sourceOwner = itemMeta.owners[0].emailAddress;
-      if(itemMeta.capabilities) { if(itemMeta.capabilities.canEdit) sourceAccess = "Writer"; else if(itemMeta.capabilities.canRead) sourceAccess = "Viewer"; }
-      isFolder = (itemMeta.mimeType === "application/vnd.google-apps.folder");
-      sourceItem = isFolder ? DriveApp.getFolderById(sourceId) : DriveApp.getFileById(sourceId);
-    } catch (e) { return responseJSON({ status: 'error', message: "Source Error" }); }
+      sourceItem = rk ? DriveApp.getFolderByIdAndResourceKey(sourceId, rk) : DriveApp.getFolderById(sourceId);
+    } catch (e) {
+      try {
+        sourceItem = rk ? DriveApp.getFileByIdAndResourceKey(sourceId, rk) : DriveApp.getFileById(sourceId);
+        isFolder = false;
+      } catch (err) {
+        return responseJSON({ status: 'error', message: "Source Error: Item tidak ditemukan atau tidak memiliki akses." });
+      }
+    }
+    
+    sourceName = sourceItem.getName();
+    try {
+      var owner = sourceItem.getOwner();
+      if (owner) sourceOwner = owner.getEmail();
+    } catch(e) {}
+    
+    try {
+      var access = sourceItem.getAccess(Session.getActiveUser());
+      if (access === DriveApp.Permission.EDIT || access === DriveApp.Permission.OWNER) {
+        sourceAccess = "Writer";
+      } else {
+        sourceAccess = "Viewer";
+      }
+    } catch (e) {
+      sourceAccess = "Viewer";
+    }
     
     var calcFiles = 0; var calcSize = 0; 
     if (isFolder) { 
@@ -349,7 +394,9 @@ function handleInitialize(data) {
     if (isFolder) {
         scanFolderRecursive(sourceItem, finalTargetId, jobData.queue, false, jobData.filters, isRemoteTarget, jobData.mode);
     } else if (calcFiles > 0) {
-        jobData.queue.push({ type: 'file', id: sourceId, name: (data.name || sourceName), size: calcSize, targetFolderId: finalTargetId, url: sourceItem.getUrl() }); 
+        var fileRk = null;
+        try { fileRk = sourceItem.getResourceKey(); } catch(e) {}
+        jobData.queue.push({ type: 'file', id: sourceId, name: (data.name || sourceName), size: calcSize, targetFolderId: finalTargetId, url: sourceItem.getUrl(), rk: fileRk }); 
     }
     
     saveJobState(jobData);
@@ -365,7 +412,9 @@ function scanFolderRecursive(folder, targetId, queue, isDry, filters, isRemoteTa
         var f = files.next(); 
         if (isDry) { s.size += f.getSize(); s.count++; } else { 
             if (!isPassFilter(f, filters)) continue; 
-            queue.push({ type: 'file', id: f.getId(), name: f.getName(), size: f.getSize(), targetFolderId: targetId }); 
+            var fileRk = null;
+            try { fileRk = f.getResourceKey(); } catch(e) {}
+            queue.push({ type: 'file', id: f.getId(), name: f.getName(), size: f.getSize(), targetFolderId: targetId, rk: fileRk }); 
         }
     } 
     var subs = folder.getFolders(); 
@@ -400,7 +449,10 @@ function handleBatch(jobId) {
     
         if (job.queue.length === 0) { 
         if(job.isSchedule && !job.remoteTargetUrl) cleanupOldBackups(job.targetParentIdForRetention, "Backup ", job.maxBackups);
-        var finalProcessed = job.processedFiles; var finalTotal = job.totalFiles; var finalSize = job.processedSize;
+        var finalProcessed = job.processedFiles; var finalTotal = job.totalFiles; 
+        
+        // Read final size from CacheService
+        var finalSize = Number(CacheService.getScriptCache().get("size_" + jobId) || job.processedSize || 0);
         
         // Hapus folder/file induk sumber jika mode Pindah
         if (job.mode.startsWith('move') && job.sourceId) {
@@ -426,20 +478,23 @@ function handleBatch(jobId) {
             logJobToSheet(job, finalTotal, finalSize);
         } catch(e) { console.log("Error summary: " + e.message); }
         deleteJobState(jobId); 
+        try { CacheService.getScriptCache().remove("size_" + jobId); } catch(e) {}
         return responseJSON({ status: 'success', action: 'complete', progress: { percent: 100, processed: finalProcessed, total: finalTotal, currentSize: formatBytes(finalSize) } }); 
     }
     
-    var c = 0; while (c < BATCH && job.queue.length > 0) { items.push(job.queue.shift()); job.processedFiles++; job.processedSize += (items[items.length-1].size||0); c++; }
+    var c = 0; while (c < BATCH && job.queue.length > 0) { items.push(job.queue.shift()); job.processedFiles++; c++; }
     saveJobState(job); 
   } finally { lock.releaseLock(); }
 
   var processed = [];
+  var sizeAdded = 0;
   for (var i = 0; i < items.length; i++) {
     var it = items[i];
     try {
         var status = "success"; var info = "Copied"; var newUrl = "#";
+        var fileSize = it.size || 0;
         if (job.remoteTargetUrl) {
-            var srcF = DriveApp.getFileById(it.id); var originalAccess = srcF.getSharingAccess(); var isPublic = (originalAccess === DriveApp.Access.ANYONE_WITH_LINK || originalAccess === DriveApp.Access.ANYONE);
+            var srcF = it.rk ? DriveApp.getFileByIdAndResourceKey(it.id, it.rk) : DriveApp.getFileById(it.id); var originalAccess = srcF.getSharingAccess(); var isPublic = (originalAccess === DriveApp.Access.ANYONE_WITH_LINK || originalAccess === DriveApp.Access.ANYONE);
             if (!isPublic) { try { srcF.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); Utilities.sleep(1500); } catch(permErr) {} }
             try { 
                 var payload = { action: 'absorb_file', fileId: it.id, folderId: job.targetParentIdForRetention, name: it.name, mode: job.mode }; 
@@ -450,8 +505,8 @@ function handleBatch(jobId) {
             var destF = DriveApp.getFolderById(it.targetFolderId); 
             var cleanName = it.name.trim();
             var existing = destF.getFilesByName(cleanName);
-            var sourceFile = DriveApp.getFileById(it.id);
-            var copiedFile;
+            var sourceFile = it.rk ? DriveApp.getFileByIdAndResourceKey(it.id, it.rk) : DriveApp.getFileById(it.id);
+            var copiedFile = null;
             
             if (existing.hasNext()) {
                 if (job.mode === 'copy_skip' || job.mode === 'move_skip') { status = 'skipped'; info = 'Skipped'; }
@@ -463,6 +518,11 @@ function handleBatch(jobId) {
                 else { copiedFile = sourceFile.makeCopy(cleanName, destF); newUrl = copiedFile.getUrl(); info = "Duplicated"; }
             } else { copiedFile = sourceFile.makeCopy(cleanName, destF); newUrl = copiedFile.getUrl(); }
             
+            // Menggunakan it.size dari sumber asli. Google Drive API sering return 0 B untuk file yang baru saja di-copy
+            // if (copiedFile && status !== 'skipped') {
+            //     try { fileSize = copiedFile.getSize(); } catch(e) {}
+            // }
+            
             // Jika mode Move, hapus file sumber asli setelah berhasil di-copy
             if (job.mode.startsWith('move') && status !== 'skipped') {
                 try {
@@ -473,9 +533,26 @@ function handleBatch(jobId) {
                 }
             }
         }
-        processed.push({ name: it.name, url: newUrl, size: formatBytes(it.size), status: status, info: info });
+        if (status === 'success' || status === 'skipped') {
+            sizeAdded += fileSize;
+        }
+        processed.push({ name: it.name, url: newUrl, size: formatBytes(fileSize), status: status, info: info });
     } catch (e) { processed.push({ name: it.name, status: 'error', info: e.message }); }
   }
+  
+  if (sizeAdded > 0) {
+    var jobLock = LockService.getScriptLock();
+    if (jobLock.tryLock(15000)) {
+      try {
+        var cache = CacheService.getScriptCache();
+        var currentCachedSize = Number(cache.get("size_" + jobId) || 0);
+        cache.put("size_" + jobId, String(currentCachedSize + sizeAdded), 21600); // 6 hours
+      } finally {
+        jobLock.releaseLock();
+      }
+    }
+  }
+  
   return responseJSON({ status: 'success', action: 'continue', jobId: jobId, processedList: processed, progress: { processed: job.processedFiles, total: job.totalFiles, percent: Math.round((job.processedFiles/job.totalFiles)*100) } });
 }
 
@@ -511,7 +588,46 @@ function logJobToSheet(job, totalFiles, totalSize) {
 }
 
 function getRandomSoftColor() { var min = 210; var r = Math.floor(Math.random() * (255 - min) + min); var g = Math.floor(Math.random() * (255 - min) + min); var b = Math.floor(Math.random() * (255 - min) + min); return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
-function handleDirectUpload(data) { try { var folderId = data.destId; if (folderId && folderId.indexOf('http') > -1) folderId = extractIdFromUrl(folderId); if (!folderId) folderId = DEFAULT_DEST_ID; var folder; try { folder = DriveApp.getFolderById(folderId); } catch(e) { folder = DriveApp.getRootFolder(); } var base64Data = data.fileData; if (base64Data.indexOf(',') > -1) base64Data = base64Data.split(',')[1]; var decoded = Utilities.base64Decode(base64Data); var blob = Utilities.newBlob(decoded, data.mimeType, data.fileName); var file = folder.createFile(blob); try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (permErr) {} try { var ownerEmail = "Shared Drive / Unknown"; try { var o = folder.getOwner(); if(o) ownerEmail = o.getEmail(); } catch(e){} var msg = "📤 <b>Direct Upload Berhasil</b>\n\n📄 File: " + file.getName() + "\n💾 Size: " + formatBytes(file.getSize()) + "\n📂 Folder: " + folder.getName() + "\npemilik folder : " + ownerEmail + "\n🔗 <a href='" + file.getUrl() + "'>Buka File</a>"; sendTelegramNotification(msg); } catch(tgErr) {} return responseJSON({ status: 'success', fileName: file.getName(), fileUrl: file.getUrl(), size: formatBytes(file.getSize()), folderName: folder.getName() }); } catch (e) { return responseJSON({ status: 'error', message: "Upload Gagal: " + e.message }); } }
+function handleDirectUpload(data) { 
+  try { 
+    var destInput = data.destId; 
+    var folder; 
+    var defaultFolder; 
+    try { defaultFolder = DriveApp.getFolderById(DEFAULT_DEST_ID); } catch(e) { defaultFolder = DriveApp.getRootFolder(); }
+    
+    if (!destInput) { 
+      folder = defaultFolder; 
+    } else {
+      if (destInput.indexOf('http') > -1) {
+        var extId = extractIdFromUrl(destInput);
+        try { folder = DriveApp.getFolderById(extId); } catch(e) {}
+      }
+      if (!folder) {
+        try { 
+          folder = DriveApp.getFolderById(destInput); 
+        } catch(e) { 
+          var folders = DriveApp.getFoldersByName(destInput);
+          if (folders.hasNext()) {
+            folder = folders.next();
+          } else {
+            folder = defaultFolder.createFolder(destInput);
+          }
+        }
+      }
+    }
+    
+    if(!folder) folder = defaultFolder;
+    
+    var base64Data = data.fileData; 
+    if (base64Data.indexOf(',') > -1) base64Data = base64Data.split(',')[1]; 
+    var decoded = Utilities.base64Decode(base64Data); 
+    var blob = Utilities.newBlob(decoded, data.mimeType, data.fileName); 
+    var file = folder.createFile(blob); 
+    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (permErr) {} 
+    try { var ownerEmail = "Shared Drive / Unknown"; try { var o = folder.getOwner(); if(o) ownerEmail = o.getEmail(); } catch(e){} var msg = "📤 <b>Direct Upload Berhasil</b>\n\n📄 File: " + file.getName() + "\n💾 Size: " + formatBytes(file.getSize()) + "\n📂 Folder: " + folder.getName() + "\npemilik folder : " + ownerEmail + "\n🔗 <a href='" + file.getUrl() + "'>Buka File</a>"; sendTelegramNotification(msg); } catch(tgErr) {} 
+    return responseJSON({ status: 'success', fileName: file.getName(), fileUrl: file.getUrl(), size: formatBytes(file.getSize()), folderName: folder.getName() }); 
+  } catch (e) { return responseJSON({ status: 'error', message: "Upload Gagal: " + e.message }); } 
+}
 function handleDeleteItem(data) { try { var id = data.id; var type = data.type; if (type === 'folder' || type === 'application/vnd.google-apps.folder') { DriveApp.getFolderById(id).setTrashed(true); } else { DriveApp.getFileById(id).setTrashed(true); } return responseJSON({ status: 'success', message: "Item Trash." }); } catch (e) { return responseJSON({ status: 'error', message: "Gagal Hapus: " + e.message }); } }
 
 function handleSearchDrive(data) {
@@ -579,7 +695,7 @@ function handleBrowseRemote(data) { return handleBrowseFolders(data); }
 function handleUnlockFiles(data) { var ids = data.ids || []; var c = 0; for (var i = 0; i < ids.length; i++) { try { DriveApp.getFileById(ids[i]).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); c++; } catch(e) {} } return responseJSON({ status: 'success', unlocked: c }); }
 function handleCheckQuota() { try { return responseJSON({ status: 'success', emailQuota: MailApp.getRemainingDailyQuota(), driveUsed: formatBytes(DriveApp.getStorageUsed()) }); } catch(e) { return responseJSON({ status: 'error', message: e.message }); } }
 function sendTelegramNotification(text) { if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return; try { UrlFetchApp.fetch("https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage", { method: "post", payload: JSON.stringify({ "chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML", "disable_web_page_preview": true }), contentType: "application/json" }); } catch (e) {} }
-function startBackgroundJob(data) { var master = { urls: data.urls, destUrl: data.destUrl, mode: data.mode, filters: data.filters, email: data.email, currentIndex: 0, currentJobId: null, startTime: new Date().getTime(), status: 'RUNNING', stats: { success: 0, fail: 0 }, isSchedule: !!data.scheduleId, scheduleId: data.scheduleId, maxBackups: data.maxBackups }; saveMasterJob(master); SCRIPT_PROP.setProperty('BG_JOB_STATUS', 'RUNNING'); deleteTriggers(); ScriptApp.newTrigger('backgroundTriggerHandler').timeBased().everyMinutes(1).create(); return responseJSON({ status: 'success', message: "Background Started" }); }
+function startBackgroundJob(data) { var master = { urls: data.urls, destUrl: data.destUrl, mode: data.mode, filters: data.filters, email: data.email, currentIndex: 0, currentJobId: null, startTime: new Date().getTime(), status: 'RUNNING', stats: { success: 0, fail: 0 }, isSchedule: !!data.scheduleId, scheduleId: data.scheduleId, maxBackups: data.maxBackups, initAttempts: 0 }; saveMasterJob(master); SCRIPT_PROP.setProperty('BG_JOB_STATUS', 'RUNNING'); deleteTriggers(); ScriptApp.newTrigger('backgroundTriggerHandler').timeBased().everyMinutes(1).create(); return responseJSON({ status: 'success', message: "Background Started" }); }
 function stopBackgroundJob() { deleteTriggers(); SCRIPT_PROP.setProperty('BG_JOB_STATUS', 'STOPPED'); return responseJSON({ status:'success' }); }
 function checkBackgroundStatus() { return responseJSON({ status:'success', bgStatus: SCRIPT_PROP.getProperty('BG_JOB_STATUS') }); }
 function backgroundTriggerHandler() { 
@@ -596,18 +712,31 @@ function backgroundTriggerHandler() {
     while (m.currentIndex < m.urls.length) { 
       if (new Date().getTime() - start > 220000) return; 
       if (!m.currentJobId) { 
+        if (m.initAttempts >= 3) {
+          m.stats.fail++;
+          m.currentIndex++;
+          m.initAttempts = 0;
+          saveMasterJob(m);
+          continue;
+        }
+        m.initAttempts = (m.initAttempts || 0) + 1;
+        saveMasterJob(m); // Simpan attempt counter SEBELUM inisialisasi untuk cegah infinite loop jika terjadi hard crash/timeout
+
         var initRes = handleInitialize({ url: m.urls[m.currentIndex], destUrl: m.destUrl, mode: m.mode, filters: m.filters, isSchedule: m.isSchedule, scheduleId: m.scheduleId, maxBackups: m.maxBackups }); 
         var initD = JSON.parse(initRes.getContent()); 
+        
         if (initD.status === 'success') { 
           m.currentJobId = initD.jobId; 
+          m.initAttempts = 0; // Reset on success
           saveMasterJob(m); 
         } else { 
           m.stats.fail++; 
           m.currentIndex++; 
+          m.initAttempts = 0;
           saveMasterJob(m); 
           continue; 
         } 
-      } 
+      }
       var done = false; 
       while (!done) { 
         if (new Date().getTime() - start > 220000) return; 
@@ -633,7 +762,22 @@ function backgroundTriggerHandler() {
 function handleAddScheduleItem(d) { var l=loadScheduleList()||[]; l.push({id:Utilities.getUuid(), label:d.label, config:d.config, lastRun:0}); saveScheduleList(l); ensureHourlyTrigger(); return responseJSON({status:'success'}); }
 function handleDeleteScheduleItem(d) { var l=loadScheduleList()||[]; saveScheduleList(l.filter(function(i){return i.id!==d.id})); return responseJSON({status:'success'}); }
 function handleGetScheduleList(d) { return responseJSON({ status:'success', list: loadScheduleList()||[] }); }
-function scheduledAutoRunner() { var l = loadScheduleList(); if(!l) return; var now = new Date().getTime(); for(var i=0; i<l.length; i++) { if (now - (l[i].lastRun||0) > 82800000) { l[i].lastRun = now; saveScheduleList(l); var conf = l[i].config; conf.scheduleId = l[i].id; startBackgroundJob(conf); break; } } }
+function scheduledAutoRunner() { 
+  if (SCRIPT_PROP.getProperty('BG_JOB_STATUS') === 'RUNNING') return; // Cek agar tidak bentrok dengan background job yg sedang jalan
+  var l = loadScheduleList(); 
+  if(!l) return; 
+  var now = new Date().getTime(); 
+  for(var i=0; i<l.length; i++) { 
+    if (now - (l[i].lastRun||0) > 82800000) { 
+      l[i].lastRun = now; 
+      saveScheduleList(l); 
+      var conf = l[i].config; 
+      conf.scheduleId = l[i].id; 
+      startBackgroundJob(conf); 
+      break; 
+    } 
+  } 
+}
 function ensureHourlyTrigger() { var t = ScriptApp.getProjectTriggers(); for(var i=0; i<t.length; i++) { if(t[i].getHandlerFunction() === 'scheduledAutoRunner') return; } ScriptApp.newTrigger('scheduledAutoRunner').timeBased().everyHours(1).create(); }
 function getSystemFolder() { var f = DriveApp.getFoldersByName(SYSTEM_FOLDER_NAME); return f.hasNext() ? f.next() : DriveApp.createFolder(SYSTEM_FOLDER_NAME); }
 function saveJobState(d) { var f = getSystemFolder(); var n = "job_"+d.jobId+".json"; var x = f.getFilesByName(n); if(x.hasNext()) x.next().setContent(JSON.stringify(d)); else f.createFile(n, JSON.stringify(d)); } 
@@ -694,6 +838,25 @@ function handleReportAndLog(d) {
 function isPassFilter(f, fil) { if(!fil) return true; if(fil.maxSizeMB && (f.getSize()/1024/1024) > fil.maxSizeMB) return false; if(fil.ignoredExt) { var ext = f.getName().split('.').pop(); if(fil.ignoredExt.indexOf(ext) > -1) return false; } return true; }
 function cleanupOldBackups(pId, prefix, max) { try { var f = DriveApp.getFolderById(pId).getFolders(); var arr = []; while(f.hasNext()){ var i = f.next(); if(i.getName().indexOf(prefix)===0) arr.push(i); } if(arr.length > max) { arr.sort(function(a,b){ return a.getDateCreated() - b.getDateCreated(); }); for(var k=0; k<(arr.length-max); k++) { arr[k].setTrashed(true); } } } catch(e){} }
 function extractIdFromUrl(u) { if(!u) return null; var m = u.match(/[-\w]{25,}/); return m ? m[0] : null; }
+function extractResourceKeyFromUrl(u) { if(!u) return null; var m = u.match(/[?&]resourcekey=([^&#]+)/); return m ? m[1] : null; }
 function formatBytes(b) { if(b===0) return '0 B'; var k=1024; var i=Math.floor(Math.log(b)/Math.log(k)); return parseFloat((b/Math.pow(k,i)).toFixed(2)) + ' ' + ['B','KB','MB','GB','TB'][i]; }
 function parseBytesFromFormat(s) { if(!s) return 0; var u={'B':1,'KB':1024,'MB':1024*1024,'GB':1024*1024*1024}; var p=s.split(' '); return parseFloat(p[0]) * (u[p[1]]||1); }
 function responseJSON(d) { return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON); }
+function verifyToken(token) {
+   var cache = CacheService.getScriptCache();
+   var cachedEmail = cache.get("sso_" + token);
+   if (cachedEmail) return cachedEmail;
+   try {
+     var url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
+     var res = UrlFetchApp.fetch(url, {muteHttpExceptions: true});
+     if (res.getResponseCode() === 200) {
+        var json = JSON.parse(res.getContentText());
+        var email = json.email;
+        if (json.aud === "404619775216-omjf6cn7j82kdnmev20rr9vp11hr7fka.apps.googleusercontent.com") {
+            cache.put("sso_" + token, email, 21600); // 6 hours
+            return email;
+        }
+     }
+   } catch(e) {}
+   return null;
+}
