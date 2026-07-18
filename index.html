@@ -543,6 +543,13 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        
+        .col-actions {
+            max-width: none !important;
+            white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+        }
 
         tr:hover td {
             background: rgba(255,255,255,0.02);
@@ -978,7 +985,7 @@
                         <th style="width: 20%;">Label</th>
                         <th style="width: 25%;">Email Server</th>
                         <th style="width: 30%;">Endpoint URL</th>
-                        <th style="width: 25%; max-width: none;">Aksi</th>
+                        <th style="width: 25%;" class="col-actions">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="remoteList">
@@ -1138,10 +1145,12 @@
         if (!hash) return;
         
         // Aliases mapping
+        if (hash === 'cloner') hash = 'clone';
+        if (hash === 'uploader') hash = 'upload';
         if (hash === 'remotenode' || hash === 'remotenodes') hash = 'remote';
         if (hash === 'aiassistant' || hash === 'ai-assistant') hash = 'ai';
         
-        const validTabs = ['cloner', 'uploader', 'search', 'ai', 'remote', 'scheduler'];
+        const validTabs = ['clone', 'upload', 'search', 'ai', 'remote', 'scheduler'];
         if (validTabs.includes(hash)) {
             switchTab(hash, false);
         }
@@ -1363,6 +1372,8 @@
         // Update URL Hash jika diperlukan
         if (updateHash) {
             let hashVal = tabId;
+            if (tabId === 'clone') hashVal = 'cloner';
+            if (tabId === 'upload') hashVal = 'uploader';
             if (tabId === 'remote') hashVal = 'remotenode';
             if (tabId === 'ai') hashVal = 'aiassistant';
             window.location.hash = hashVal;
@@ -2056,7 +2067,7 @@
                         <td>${node.label}</td>
                         <td>${node.email}</td>
                         <td title="${node.url}">${node.url.substring(0, 35)}...</td>
-                        <td style="white-space: nowrap; max-width: none; overflow: visible; text-overflow: clip;">
+                        <td class="col-actions">
                             <button class="btn-table" onclick="testRemoteNode('${node.url}', '${node.label}')">🔌 Tes Link</button>
                             <button class="btn-table" style="background: var(--primary);" onclick="openRemoteExplorer('${node.id}', '${node.label}')">🔍 Jelajahi</button>
                             <button class="btn-table btn-table-danger" onclick="deleteRemoteNode('${node.id}')">🗑️ Hapus</button>
