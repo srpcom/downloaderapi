@@ -101,6 +101,7 @@ function doPost(e) {
     if (action === 'delete_remote_account') return handleDeleteRemoteAccount(data); 
     if (action === 'connect_remote_dest') return handleConnectRemoteDest(data);
     if (action === 'remote_proxy') return handleRemoteProxy(data);
+    if (action === 'register_remote_node') return handleRegisterRemoteNode(data);
 
     // 6. SCHEDULER & LOGGING
     if (action === 'add_schedule_item') return handleAddScheduleItem(data);
@@ -806,6 +807,39 @@ function handleRemoteProxy(data) {
     });
     
     return ContentService.createTextOutput(response.getContentText()).setMimeType(ContentService.MimeType.JSON);
+  } catch(e) {
+    return responseJSON({ status: 'error', message: e.message });
+  }
+}
+
+function handleRegisterRemoteNode(data) {
+  try {
+    var list = loadRemoteList() || [];
+    
+    var updated = false;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].url === data.url) {
+        list[i].label = data.label;
+        list[i].token = data.token;
+        list[i].email = data.email;
+        updated = true;
+        break;
+      }
+    }
+    
+    if (!updated) {
+      list.push({
+        id: Utilities.getUuid(),
+        label: data.label,
+        url: data.url,
+        token: data.token,
+        type: 'server',
+        email: data.email
+      });
+    }
+    
+    saveRemoteList(list);
+    return responseJSON({ status: 'success', message: "Registrasi sukses!" });
   } catch(e) {
     return responseJSON({ status: 'error', message: e.message });
   }
