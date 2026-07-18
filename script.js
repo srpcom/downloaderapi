@@ -12,7 +12,7 @@ var SCRIPT_PROP = PropertiesService.getScriptProperties();
 var DEFAULT_DEST_ID = SCRIPT_PROP.getProperty('DEFAULT_DEST_ID') || "1bG8M11VUfGcW5_FIjWiuoURL9QlnQZPS"; // ID Folder Tujuan Default
 var LOG_SHEET_ID = SCRIPT_PROP.getProperty('LOG_SHEET_ID') || "181frqAI898WbVdFkp2AufEhHCfwXDhBhWBQ3CzBnUWo"; // ID Spreadsheet Log
 var LOG_SHEET_GID = Number(SCRIPT_PROP.getProperty('LOG_SHEET_GID')) || 587199847; 
-var ALLOWED_EMAILS = SCRIPT_PROP.getProperty('ALLOWED_EMAILS') || "syamsul18782@gmail.com"; // Email yang diizinkan Login
+var ALLOWED_EMAILS = "syamsul18782@gmail.com"; // Email yang diizinkan Login (Hardcoded)
 
 var SYSTEM_FOLDER_NAME = "G-Drive_System_Config";
 var SCHEDULE_CONFIG_FILENAME = "schedule_config_list.json";
@@ -854,19 +854,43 @@ function verifyToken(token) {
      var cachedEmail = cache.get(cacheKey);
      if (cachedEmail) return cachedEmail;
    } catch(cacheErr) {}
+
+   var clientID = "404619775216-omjf6cn7j82kdnmev20rr9vp11hr7fka.apps.googleusercontent.com";
+   
+   // 1. Coba verifikasi resmi via Google API
    try {
      var url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
      var res = UrlFetchApp.fetch(url, {muteHttpExceptions: true});
      if (res.getResponseCode() === 200) {
         var json = JSON.parse(res.getContentText());
         var email = json.email;
-        if (json.aud === "404619775216-omjf6cn7j82kdnmev20rr9vp11hr7fka.apps.googleusercontent.com") {
-            try {
-               cache.put(cacheKey, email, 21600); // 6 hours
-            } catch(cachePutErr) {}
+        if (json.aud === clientID) {
+            try { cache.put(cacheKey, email, 21600); } catch(e) {}
             return email;
         }
      }
    } catch(e) {}
+
+   // 2. Fallback: Decode lokal jika API Google offline/gagal
+   try {
+     var decoded = decodeJwtServer(token);
+     if (decoded && decoded.email && decoded.aud === clientID) {
+         try { cache.put(cacheKey, decoded.email, 21600); } catch(e) {}
+         return decoded.email;
+     }
+   } catch(e) {}
+
    return null;
+}
+
+function decodeJwtServer(token) {
+  try {
+    var parts = token.split('.');
+    if (parts.length < 2) return null;
+    var payload = parts[1];
+    var decoded = Utilities.newBlob(Utilities.base64DecodeWebSafe(payload)).getDataAsString();
+    return JSON.parse(decoded);
+  } catch(e) {
+    return null;
+  }
 }
