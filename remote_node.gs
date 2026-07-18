@@ -7,15 +7,18 @@
 // 2. Buka https://script.google.com/
 // 3. Buat Project Baru.
 // 4. Hapus semua kode bawaan, lalu paste seluruh kode ini.
-// 5. Klik "Deploy" -> "New deployment".
-// 6. Pilih tipe: "Web app" (ikon gir/roda).
-// 7. Konfigurasi Web App:
+// 5. CRITICAL: Di bagian atas editor, pilih fungsi "getInitialInfo" lalu klik tombol "Run".
+//    Akan muncul pop-up "Authorization Required". Klik "Review Permissions",
+//    pilih akun Google Anda, klik "Advanced" -> "Go to (unsafe)", dan klik "Allow".
+//    Ini wajib dilakukan sekali agar script memiliki izin untuk melakukan request eksternal (UrlFetchApp).
+// 6. Klik "Deploy" -> "New deployment".
+// 7. Pilih tipe: "Web app" (ikon gir/roda).
+// 8. Konfigurasi Web App:
 //    - Execute as: Me (Email akun remote Anda)
 //    - Who has access: Anyone (Siapa saja)
-// 8. Klik "Deploy", lakukan Otorisasi Akses (Authorize).
-// 9. Salin "Web app URL" yang diberikan, lalu BUKA URL TERSEBUT di browser Anda.
-// 10. Masukkan URL Web App utama Anda, password server Anda (default: 1), 
-//     lalu klik "Daftarkan Node (Pair)". Pemasangan selesai seketika!
+// 9. Klik "Deploy", lalu salin "Web app URL" yang diberikan.
+// 10. Buka URL Web App remote tersebut di browser Anda. Masukkan URL Web App utama Anda,
+//     password server Anda (default: 1), lalu klik "Daftarkan Node (Pair)". Selesai!
 // =========================================================================
 
 function doGet(e) {
