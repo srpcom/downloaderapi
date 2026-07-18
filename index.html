@@ -1019,6 +1019,7 @@
                     <button onclick="goUpRemoteFolder()" id="explorerBackBtn" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;" disabled>⬆&nbsp;Naik</button>
                     <button onclick="refreshRemoteFolder()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">🔄 Refresh</button>
                     <button onclick="createRemoteFolder()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; color: #2ed573;">📁 Buat Folder</button>
+                    <button id="copySelectedBtn" onclick="copySelectedRemoteItems()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: linear-gradient(135deg, #00d2ff, #0081ff); border: none; border-radius: 8px; color: white; display: none; font-weight: 500; cursor: pointer;">📋 Salin Terpilih (<span id="selectedRemoteCount">0</span>)</button>
                 </div>
                 
                 <!-- Pencarian Remote -->
@@ -1045,6 +1046,7 @@
                     <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: 'Poppins', sans-serif; font-size: 0.9rem;">
                         <thead>
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: #a0a0b0;">
+                                <th style="padding: 10px; width: 40px; text-align: center;"><input type="checkbox" id="selectAllRemote" onclick="toggleSelectAllRemote(this)" style="cursor: pointer; transform: scale(1.1);"></th>
                                 <th style="padding: 10px;">Nama</th>
                                 <th style="padding: 10px; width: 120px;">Ukuran</th>
                                 <th style="padding: 10px; width: 280px; text-align: right;" class="col-actions">Aksi</th>
@@ -2264,12 +2266,18 @@
                     backBtn.style.opacity = '0.5';
                 }
 
+                // Reset select all checkbox & count
+                const master = document.getElementById('selectAllRemote');
+                if (master) master.checked = false;
+                updateRemoteSelectedCount();
+ 
                 // Render Folder
                 if (res.folders && res.folders.length > 0) {
                     res.folders.forEach(folder => {
                         const tr = document.createElement('tr');
                         tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
                         tr.innerHTML = `
+                            <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${folder.id}" data-type="folder" data-name="${folder.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
                             <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
                             <td style="padding: 10px; color: #888;">-</td>
                             <td style="padding: 10px; text-align: right;" class="col-actions">
@@ -2287,13 +2295,14 @@
                         list.appendChild(tr);
                     });
                 }
-
+ 
                 // Render File
                 if (res.files && res.files.length > 0) {
                     res.files.forEach(file => {
                         const tr = document.createElement('tr');
                         tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
                         tr.innerHTML = `
+                            <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${file.id}" data-type="file" data-name="${file.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
                             <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
                             <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
                             <td style="padding: 10px; text-align: right;" class="col-actions">
@@ -2310,9 +2319,9 @@
                         list.appendChild(tr);
                     });
                 }
-
+ 
                 if ((!res.folders || res.folders.length === 0) && (!res.files || res.files.length === 0)) {
-                    list.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 30px; color: #888;">Folder ini kosong.</td></tr>`;
+                    list.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: #888;">Folder ini kosong.</td></tr>`;
                 }
             } else {
                 throw new Error(res.message);
@@ -2402,12 +2411,18 @@
                 document.getElementById('explorerBackBtn').disabled = true;
                 document.getElementById('explorerBackBtn').style.opacity = '0.5';
 
+                // Reset select all checkbox & count
+                const master = document.getElementById('selectAllRemote');
+                if (master) master.checked = false;
+                updateRemoteSelectedCount();
+
                 // Render Folder
                 if (res.folders && res.folders.length > 0) {
                     res.folders.forEach(folder => {
                         const tr = document.createElement('tr');
                         tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
                         tr.innerHTML = `
+                            <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${folder.id}" data-type="folder" data-name="${folder.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
                             <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
                             <td style="padding: 10px; color: #888;">-</td>
                             <td style="padding: 10px; text-align: right;" class="col-actions">
@@ -2432,6 +2447,7 @@
                         const tr = document.createElement('tr');
                         tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
                         tr.innerHTML = `
+                            <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${file.id}" data-type="file" data-name="${file.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
                             <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
                             <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
                             <td style="padding: 10px; text-align: right;" class="col-actions">
@@ -2450,7 +2466,7 @@
                 }
 
                 if ((!res.folders || res.folders.length === 0) && (!res.files || res.files.length === 0)) {
-                    list.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 30px; color: #888;">Pencarian tidak menemukan item.</td></tr>`;
+                    list.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: #888;">Pencarian tidak menemukan item.</td></tr>`;
                 }
             } else {
                 throw new Error(res.message);
@@ -2567,6 +2583,71 @@
                     Telah dimasukkan ke input sumber cloner pada tab <b>Cloner</b>.<br>
                     Silakan klik tombol <b>"Mulai Salin / Backup"</b> untuk memproses penduplikatan ke akun utama Anda!
                    </div>`,
+            background: '#111',
+            color: '#fff'
+        });
+    }
+
+    function toggleSelectAllRemote(masterCheckbox) {
+        const checkboxes = document.querySelectorAll('.remote-item-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = masterCheckbox.checked;
+        });
+        updateRemoteSelectedCount();
+    }
+
+    function updateRemoteSelectedCount() {
+        const checkboxes = document.querySelectorAll('.remote-item-checkbox');
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        
+        const countSpan = document.getElementById('selectedRemoteCount');
+        const btn = document.getElementById('copySelectedBtn');
+        
+        if (countSpan) countSpan.textContent = checkedCount;
+        if (btn) {
+            if (checkedCount > 0) {
+                btn.style.display = 'inline-block';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+        
+        // Update master checkbox status
+        const master = document.getElementById('selectAllRemote');
+        if (master) {
+            master.checked = checkboxes.length > 0 && checkedCount === checkboxes.length;
+        }
+    }
+
+    function copySelectedRemoteItems() {
+        const checkboxes = document.querySelectorAll('.remote-item-checkbox');
+        const selected = Array.from(checkboxes).filter(cb => cb.checked);
+        if (selected.length === 0) return;
+        
+        let urls = [];
+        selected.forEach(cb => {
+            const id = cb.getAttribute('data-id');
+            const type = cb.getAttribute('data-type');
+            const url = type === 'folder' 
+                ? `https://drive.google.com/drive/folders/${id}`
+                : `https://drive.google.com/open?id=${id}`;
+            urls.push(url);
+        });
+        
+        // Pindahkan ke textarea Cloner utama, gabung dengan baris baru (newline)
+        const folderUrlsInput = document.getElementById('folderUrls');
+        folderUrlsInput.value = urls.join('\n');
+        
+        // Pindah tab ke Cloner
+        switchTab('cloner');
+        
+        // Tutup modal
+        closeExplorer();
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Item Ditambahkan!',
+            text: `${selected.length} item berhasil dipindahkan ke input Cloner utama. Siap diduplikasi!`,
             background: '#111',
             color: '#fff'
         });
