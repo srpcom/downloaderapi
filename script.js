@@ -41,16 +41,14 @@ function doPost(e) {
     var failedCount = Number(cache.get('failed_attempts') || 0);
     if (failedCount >= 20) return responseJSON({ status: 'error', message: "⛔ Locked." });
 
-    // Beberapa action tidak butuh SSO ketat (public info)
-    if (action !== 'get_schedule_list' && action !== 'check_quota' && action !== 'get_remote_accounts') {
-         if (!data.sso_token) return responseJSON({ status: 'error', message: "Silakan login menggunakan Google SSO." });
-         var email = verifyToken(data.sso_token);
-         var allowedArr = ALLOWED_EMAILS.split(',').map(function(e){ return e.trim().toLowerCase(); });
-         if (!email || allowedArr.indexOf(email.toLowerCase()) === -1) {
-            cache.put('failed_attempts', String(failedCount+1), 600);
-            return responseJSON({ status: 'error', message: "Akses Ditolak! Email Anda (" + (email || "Tidak Valid") + ") tidak memiliki izin." });
-         } else { if (failedCount > 0) cache.remove('failed_attempts'); }
-    }
+    // Verifikasi semua action dengan SSO
+    if (!data.sso_token) return responseJSON({ status: 'error', message: "Silakan login menggunakan Google SSO." });
+    var email = verifyToken(data.sso_token);
+    var allowedArr = ALLOWED_EMAILS.split(',').map(function(e){ return e.trim().toLowerCase(); });
+    if (!email || allowedArr.indexOf(email.toLowerCase()) === -1) {
+       cache.put('failed_attempts', String(failedCount+1), 600);
+       return responseJSON({ status: 'error', message: "Akses Ditolak! Email Anda (" + (email || "Tidak Valid") + ") tidak memiliki izin." });
+    } else { if (failedCount > 0) cache.remove('failed_attempts'); }
 
     // --- ROUTING MENU ---
     
@@ -58,6 +56,7 @@ function doPost(e) {
     if (action === 'gemini_ai') return handleGeminiAI(data);
 
     // 2. AUTH & CORE
+    if (action === 'verify_auth') return responseJSON({ status: 'success', message: "Login OK" });
     if (action === 'verify_pin') return responseJSON({ status: 'success', message: "Login OK" });
     if (action === 'initialize') return handleInitialize(data);
     if (action === 'process_batch') return handleBatch(data.jobId);

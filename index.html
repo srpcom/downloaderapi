@@ -1065,9 +1065,32 @@
         return overrideUrl || localStorage.getItem('gdrive_script_url') || DEFAULT_SCRIPT_URL;
     }
 
+    function decodeJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
     function checkAndPromptPin() {
         const container = document.querySelector('.container');
-        if (!ssoToken) {
+        let isValid = false;
+        if (ssoToken) {
+            const payload = decodeJwt(ssoToken);
+            if (payload && payload.email && payload.email.toLowerCase() === 'syamsul18782@gmail.com') {
+                isValid = true;
+            } else {
+                ssoToken = '';
+                localStorage.removeItem('gdrive_sso_token');
+            }
+        }
+        if (!isValid) {
             document.getElementById('ssoOverlay').style.display = 'flex';
             if (container) container.style.display = 'none';
         } else {
@@ -1076,13 +1099,55 @@
         }
     }
 
-    function handleCredentialResponse(response) {
-        ssoToken = response.credential;
-        localStorage.setItem('gdrive_sso_token', ssoToken);
-        checkAndPromptPin();
-        Swal.fire({ icon: 'success', title: 'Login Berhasil!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
-        loadRemoteNodes();
-        loadScheduleList();
+    async function handleCredentialResponse(response) {
+        const token = response.credential;
+        const payload = decodeJwt(token);
+        if (!payload || !payload.email || payload.email.toLowerCase() !== 'syamsul18782@gmail.com') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Akses Ditolak!',
+                text: 'Email Anda (' + (payload?.email || 'Tidak Diketahui') + ') tidak diizinkan masuk ke aplikasi ini.',
+                background: '#111',
+                color: '#fff'
+            });
+            ssoToken = '';
+            localStorage.removeItem('gdrive_sso_token');
+            checkAndPromptPin();
+            return;
+        }
+
+        Swal.fire({
+            title: 'Memverifikasi Akun...',
+            allowOutsideClick: false,
+            background: '#111',
+            color: '#fff',
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            ssoToken = token;
+            const res = await sendRequest({ action: 'verify_auth' });
+            if (res.status === 'success') {
+                localStorage.setItem('gdrive_sso_token', ssoToken);
+                checkAndPromptPin();
+                Swal.fire({ icon: 'success', title: 'Login Berhasil!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
+                loadRemoteNodes();
+                loadScheduleList();
+            } else {
+                throw new Error(res.message || 'Verifikasi server gagal');
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Akses Ditolak!',
+                text: err.message,
+                background: '#111',
+                color: '#fff'
+            });
+            ssoToken = '';
+            localStorage.removeItem('gdrive_sso_token');
+            checkAndPromptPin();
+        }
     }
 
     function promptPinChange(isFirstLoad = false) {
