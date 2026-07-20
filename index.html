@@ -594,6 +594,36 @@
             color: #fff;
         }
 
+        /* Grid Explorer Styling */
+        .explorer-grid-card {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            position: relative;
+            gap: 8px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+        }
+        .explorer-grid-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0, 210, 255, 0.3);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        .explorer-grid-thumb {
+            height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
         /* AI Tab chat layout */
         .ai-chat-container {
             background: rgba(0,0,0,0.25);
@@ -735,6 +765,7 @@
         <button class="tab-btn" onclick="switchTab('ai')">🤖 AI Assistant</button>
         <button class="tab-btn" onclick="switchTab('remote')">🔗 Remote Nodes</button>
         <button class="tab-btn" onclick="switchTab('scheduler')">⏱️ Scheduler</button>
+        <button class="tab-btn" onclick="switchTab('riwayat')">📜 Riwayat</button>
     </div>
 
     <!-- CLONER TAB -->
@@ -1020,6 +1051,7 @@
                     <button onclick="refreshRemoteFolder()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">🔄 Refresh</button>
                     <button onclick="createRemoteFolder()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; color: #2ed573;">📁 Buat Folder</button>
                     <button id="copySelectedBtn" onclick="copySelectedRemoteItems()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: linear-gradient(135deg, #00d2ff, #0081ff); border: none; border-radius: 8px; color: white; display: none; font-weight: 500; cursor: pointer;">📋 Salin Terpilih (<span id="selectedRemoteCount">0</span>)</button>
+                    <button onclick="toggleExplorerLayout()" id="explorerLayoutBtn" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">📱 Grid View</button>
                 </div>
                 
                 <!-- Pencarian Remote -->
@@ -1056,6 +1088,10 @@
                             <!-- File & Folder Remote akan di-render di sini -->
                         </tbody>
                     </table>
+                </div>
+
+                <div id="explorerGridWrapper" style="width: 100%; display: none; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 10px 0;">
+                    <!-- Grid View items will be rendered here -->
                 </div>
             </div>
         </div>
@@ -1114,6 +1150,38 @@
             </table>
         </div>
     </div>
+
+    <!-- RIWAYAT TAB -->
+    <div class="tab-content" id="tab-riwayat">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h4 style="color: var(--primary); margin: 0 0 5px 0;">📜 Riwayat Transaksi Duplikasi</h4>
+                <p style="color: #aaa; margin: 0; font-size: 0.8rem;">Daftar tugas duplikasi yang telah selesai dijalankan.</p>
+            </div>
+            <button class="action-btn btn-danger" onclick="clearHistoryList()" style="padding: 6px 12px; font-size: 0.8rem;">🗑️ Hapus Semua Riwayat</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Sumber</th>
+                        <th>Tujuan</th>
+                        <th>Mode</th>
+                        <th>File & Ukuran</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="historyList">
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #888;">Memuat riwayat transaksi...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -1131,6 +1199,7 @@
     let isStopRequested = false;
     let timerInterval;
     let currentSessionLogs = [];
+    let activeJobIds = [];
     const CONCURRENCY_LIMIT = 5;
 
     // Inisialisasi Halaman
@@ -1373,6 +1442,7 @@
         // Trigger load data spesifik tab jika diperlukan
         if(tabId === 'remote') loadRemoteNodes();
         if(tabId === 'scheduler') loadScheduleList();
+        if(tabId === 'riwayat') loadHistoryList();
 
         // Update URL Hash jika diperlukan
         if (updateHash) {
@@ -1381,6 +1451,7 @@
             if (tabId === 'upload') hashVal = 'uploader';
             if (tabId === 'remote') hashVal = 'remotenode';
             if (tabId === 'ai') hashVal = 'aiassistant';
+            if (tabId === 'riwayat') hashVal = 'riwayat';
             window.location.hash = hashVal;
         }
     }
@@ -1644,6 +1715,7 @@
         if (initRes.status !== 'success') throw new Error(initRes.message);
 
         const jobId = initRes.jobId;
+        activeJobIds.push(jobId);
         const total = initRes.totalFiles;
         const sourceName = initRes.sourceName || "Item";
         let targetUrl = initRes.targetUrl; 
@@ -1666,12 +1738,11 @@
                     if (res.status !== 'success') throw new Error(res.message);
                     
                     const p = res.progress;
-                    updateProgress(p.percent, `${actionText}: ${p.processed}/${p.total}`);
                     finalProcessed = p.processed;
                     finalSizeStr = p.currentSize;
 
                     if (res.processedList && res.processedList.length > 0) {
-                        res.processedList.forEach(item => {
+                        res.processedList.forEach((item, idx) => {
                             let type = 'success';
                             if(item.status === 'skipped') type = 'skip';
                             if(item.status === 'error') type = 'error';
@@ -1690,7 +1761,14 @@
                             });
 
                             addLogHTML(item.name, item.url, item.size, type, displayInfo);
+
+                            // Progress Real-time per file
+                            const currentNum = p.processed - res.processedList.length + idx + 1;
+                            const currentPercent = Math.round((currentNum / p.total) * 100);
+                            updateProgress(currentPercent, `${actionText} ${currentNum}/${p.total} (${currentPercent}%) - ${item.name}`);
                         });
+                    } else {
+                        updateProgress(p.percent, `${actionText}: ${p.processed}/${p.total}`);
                     }
 
                     if (res.action === 'complete') isFinished = true;
@@ -1703,6 +1781,9 @@
         for (let k = 0; k < CONCURRENCY_LIMIT; k++) workers.push(workerTask());
         await Promise.all(workers);
 
+        // Hapus dari daftar pekerjaan aktif
+        activeJobIds = activeJobIds.filter(id => id !== jobId);
+
         return { files: finalProcessed, sizeStr: finalSizeStr, url: targetUrl, name: sourceName, type: sourceType };
     }
 
@@ -1711,6 +1792,14 @@
         const stopBtn = document.getElementById('stopBtn');
         stopBtn.disabled = true;
         stopBtn.textContent = "Menghentikan...";
+        
+        // Kirim request pembatalan ke server jika ada pekerjaan aktif
+        if (activeJobIds.length > 0) {
+            activeJobIds.forEach(jId => {
+                sendRequest({ action: 'stop_job', jobId: jId }).catch(err => console.log("Failed to stop job server-side:", err));
+            });
+            activeJobIds = [];
+        }
         
         if (document.getElementById('bgToggle').checked) {
             addLog("Mengirim sinyal penghentian ke server...", "info");
@@ -2214,6 +2303,8 @@
     let activeNodeId = '';
     let currentRemoteFolderId = 'root';
     let remoteParentFolderId = null;
+    let currentExplorerLayout = 'list';
+    let lastRemoteFolderData = null;
 
     function openRemoteExplorer(nodeId, label) {
         activeNodeId = nodeId;
@@ -2229,6 +2320,184 @@
 
     function closeExplorer() {
         document.getElementById('explorerModal').style.display = 'none';
+    }
+
+    function toggleExplorerLayout() {
+        currentExplorerLayout = (currentExplorerLayout === 'list') ? 'grid' : 'list';
+        document.getElementById('explorerLayoutBtn').textContent = (currentExplorerLayout === 'list') ? '📱 Grid View' : '📋 List View';
+        if (lastRemoteFolderData) {
+            renderRemoteItems(lastRemoteFolderData);
+        }
+    }
+
+    function getThumbnailUrl(fileId, mimeType) {
+        if (mimeType && (mimeType.startsWith('image/') || mimeType.startsWith('video/'))) {
+            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+        }
+        // Folder & File Emojis
+        if (mimeType === 'folder') return '📁';
+        if (mimeType && mimeType.includes('pdf')) return '📕';
+        if (mimeType && (mimeType.includes('document') || mimeType.includes('word'))) return '📘';
+        if (mimeType && (mimeType.includes('sheet') || mimeType.includes('excel'))) return '📗';
+        if (mimeType && (mimeType.includes('presentation') || mimeType.includes('powerpoint'))) return 'Orange 📙';
+        if (mimeType && (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar') || mimeType.includes('gzip'))) return '📦';
+        if (mimeType && mimeType.startsWith('audio/')) return '🎵';
+        if (mimeType && mimeType.startsWith('video/')) return '🎥';
+        return '📄';
+    }
+
+    function renderRemoteItems(res) {
+        const tableWrapper = document.getElementById('explorerTableWrapper');
+        const gridWrapper = document.getElementById('explorerGridWrapper');
+        const list = document.getElementById('explorerList');
+        
+        list.innerHTML = '';
+        gridWrapper.innerHTML = '';
+        
+        // Reset select all checkbox in header
+        const master = document.getElementById('selectAllRemote');
+        if (master) master.checked = false;
+        updateRemoteSelectedCount();
+
+        const hasItems = (res.folders && res.folders.length > 0) || (res.files && res.files.length > 0);
+
+        if (currentExplorerLayout === 'list') {
+            tableWrapper.style.display = 'block';
+            gridWrapper.style.display = 'none';
+
+            if (!hasItems) {
+                list.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: #888;">Folder ini kosong.</td></tr>`;
+                return;
+            }
+
+            // Render list folders
+            if (res.folders && res.folders.length > 0) {
+                res.folders.forEach(folder => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+                    tr.innerHTML = `
+                        <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${folder.id}" data-type="folder" data-name="${folder.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
+                        <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
+                        <td style="padding: 10px; color: #888;">-</td>
+                        <td style="padding: 10px; text-align: right;" class="col-actions">
+                            <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
+                            <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 4px; width: 75px;" onchange="changeRemoteShare(this, '${folder.id}', 'folder', '${folder.name}')">
+                                <option value="" disabled selected hidden>Share</option>
+                                <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
+                                <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
+                                <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
+                            </select>
+                            <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${folder.id}', 'folder', '${folder.name}')">Salin</button>
+                            <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${folder.id}', 'folder', '${folder.name}')">Hapus</button>
+                        </td>
+                    `;
+                    list.appendChild(tr);
+                });
+            }
+
+            // Render list files
+            if (res.files && res.files.length > 0) {
+                res.files.forEach(file => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+                    tr.innerHTML = `
+                        <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${file.id}" data-type="file" data-name="${file.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
+                        <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
+                        <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
+                        <td style="padding: 10px; text-align: right;" class="col-actions">
+                            <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 4px; width: 75px;" onchange="changeRemoteShare(this, '${file.id}', 'file', '${file.name}')">
+                                <option value="" disabled selected hidden>Share</option>
+                                <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
+                                <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
+                                <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
+                            </select>
+                            <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${file.id}', 'file', '${file.name}')">Salin</button>
+                            <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${file.id}', 'file', '${file.name}')">Hapus</button>
+                        </td>
+                    `;
+                    list.appendChild(tr);
+                });
+            }
+        } else {
+            tableWrapper.style.display = 'none';
+            gridWrapper.style.display = 'grid';
+
+            if (!hasItems) {
+                gridWrapper.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">Folder ini kosong.</div>`;
+                return;
+            }
+
+            // Render grid folders
+            if (res.folders && res.folders.length > 0) {
+                res.folders.forEach(folder => {
+                    const card = document.createElement('div');
+                    card.className = 'explorer-grid-card';
+                    card.innerHTML = `
+                        <div style="position: absolute; top: 10px; left: 10px; z-index: 5;">
+                            <input type="checkbox" class="remote-item-checkbox" data-id="${folder.id}" data-type="folder" data-name="${folder.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);">
+                        </div>
+                        <div class="explorer-grid-thumb" style="cursor: pointer; user-select: none;" onclick="loadRemoteFolder('${folder.id}')">
+                            📁
+                        </div>
+                        <div style="text-align: left; display: flex; flex-direction: column; gap: 2px;">
+                            <span style="color: #00d2ff; font-size: 0.8rem; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; cursor: pointer;" onclick="loadRemoteFolder('${folder.id}')" title="${folder.name}">${folder.name}</span>
+                            <span style="color: #666; font-size: 0.7rem;">Folder</span>
+                        </div>
+                        <div style="display: flex; gap: 4px; justify-content: space-between; align-items: center; margin-top: auto; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 4px;">
+                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 2px; width: 45px; font-size: 0.7rem;" onchange="changeRemoteShare(this, '${folder.id}', 'folder', '${folder.name}')">
+                                    <option value="" disabled selected hidden>Akses</option>
+                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
+                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View</option>
+                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Edit</option>
+                                </select>
+                                <button class="btn-table" style="background: var(--primary); color: white; padding: 2px 6px; font-size: 0.7rem;" onclick="copyRemoteItemToMain('${folder.id}', 'folder', '${folder.name}')">Salin</button>
+                            </div>
+                            <button class="btn-table btn-table-danger" style="padding: 2px 6px; font-size: 0.7rem;" onclick="deleteRemoteItem('${folder.id}', 'folder', '${folder.name}')">🗑️</button>
+                        </div>
+                    `;
+                    gridWrapper.appendChild(card);
+                });
+            }
+
+            // Render grid files
+            if (res.files && res.files.length > 0) {
+                res.files.forEach(file => {
+                    const card = document.createElement('div');
+                    card.className = 'explorer-grid-card';
+                    const thumbUrl = getThumbnailUrl(file.id, file.mimeType);
+                    const isImageOrVideo = thumbUrl.startsWith('http');
+
+                    card.innerHTML = `
+                        <div style="position: absolute; top: 10px; left: 10px; z-index: 5;">
+                            <input type="checkbox" class="remote-item-checkbox" data-id="${file.id}" data-type="file" data-name="${file.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);">
+                        </div>
+                        <div class="explorer-grid-thumb">
+                            ${isImageOrVideo 
+                                ? `<img src="${thumbUrl}" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">`
+                                : `<span style="font-size: 2.2rem; user-select: none;">${thumbUrl}</span>`}
+                        </div>
+                        <div style="text-align: left; display: flex; flex-direction: column; gap: 2px;">
+                            <span style="color: #fff; font-size: 0.8rem; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${file.name}">${file.name}</span>
+                            <span style="color: #888; font-size: 0.7rem;">${formatBytes(file.size)}</span>
+                        </div>
+                        <div style="display: flex; gap: 4px; justify-content: space-between; align-items: center; margin-top: auto; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 4px;">
+                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 2px; width: 45px; font-size: 0.7rem;" onchange="changeRemoteShare(this, '${file.id}', 'file', '${file.name}')">
+                                    <option value="" disabled selected hidden>Akses</option>
+                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
+                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View</option>
+                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Edit</option>
+                                </select>
+                                <button class="btn-table" style="background: var(--primary); color: white; padding: 2px 6px; font-size: 0.7rem;" onclick="copyRemoteItemToMain('${file.id}', 'file', '${file.name}')">Salin</button>
+                            </div>
+                            <button class="btn-table btn-table-danger" style="padding: 2px 6px; font-size: 0.7rem;" onclick="deleteRemoteItem('${file.id}', 'file', '${file.name}')">🗑️</button>
+                        </div>
+                    `;
+                    gridWrapper.appendChild(card);
+                });
+            }
+        }
     }
 
     async function loadRemoteFolder(folderId) {
@@ -2271,58 +2540,7 @@
                 if (master) master.checked = false;
                 updateRemoteSelectedCount();
  
-                // Render Folder
-                if (res.folders && res.folders.length > 0) {
-                    res.folders.forEach(folder => {
-                        const tr = document.createElement('tr');
-                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-                        tr.innerHTML = `
-                            <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${folder.id}" data-type="folder" data-name="${folder.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
-                            <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
-                            <td style="padding: 10px; color: #888;">-</td>
-                            <td style="padding: 10px; text-align: right;" class="col-actions">
-                                <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
-                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 4px; width: 75px;" onchange="changeRemoteShare(this, '${folder.id}', 'folder', '${folder.name}')">
-                                    <option value="" disabled selected hidden>Share</option>
-                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
-                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
-                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
-                                </select>
-                                <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${folder.id}', 'folder', '${folder.name}')">Salin</button>
-                                <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${folder.id}', 'folder', '${folder.name}')">Hapus</button>
-                            </td>
-                        `;
-                        list.appendChild(tr);
-                    });
-                }
- 
-                // Render File
-                if (res.files && res.files.length > 0) {
-                    res.files.forEach(file => {
-                        const tr = document.createElement('tr');
-                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-                        tr.innerHTML = `
-                            <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${file.id}" data-type="file" data-name="${file.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
-                            <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
-                            <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
-                            <td style="padding: 10px; text-align: right;" class="col-actions">
-                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 4px; width: 75px;" onchange="changeRemoteShare(this, '${file.id}', 'file', '${file.name}')">
-                                    <option value="" disabled selected hidden>Share</option>
-                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
-                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
-                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
-                                </select>
-                                <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${file.id}', 'file', '${file.name}')">Salin</button>
-                                <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${file.id}', 'file', '${file.name}')">Hapus</button>
-                            </td>
-                        `;
-                        list.appendChild(tr);
-                    });
-                }
- 
-                if ((!res.folders || res.folders.length === 0) && (!res.files || res.files.length === 0)) {
-                    list.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: #888;">Folder ini kosong.</td></tr>`;
-                }
+                renderRemoteItems(res);
             } else {
                 throw new Error(res.message);
             }
@@ -2416,58 +2634,8 @@
                 if (master) master.checked = false;
                 updateRemoteSelectedCount();
 
-                // Render Folder
-                if (res.folders && res.folders.length > 0) {
-                    res.folders.forEach(folder => {
-                        const tr = document.createElement('tr');
-                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-                        tr.innerHTML = `
-                            <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${folder.id}" data-type="folder" data-name="${folder.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
-                            <td style="padding: 10px; color: #00d2ff; cursor: pointer; font-weight: 500;" onclick="loadRemoteFolder('${folder.id}')">📁 ${folder.name}</td>
-                            <td style="padding: 10px; color: #888;">-</td>
-                            <td style="padding: 10px; text-align: right;" class="col-actions">
-                                <button class="btn-table" style="background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.2);" onclick="loadRemoteFolder('${folder.id}')">Buka</button>
-                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 4px; width: 75px;" onchange="changeRemoteShare(this, '${folder.id}', 'folder', '${folder.name}')">
-                                    <option value="" disabled selected hidden>Share</option>
-                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
-                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
-                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
-                                </select>
-                                <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${folder.id}', 'folder', '${folder.name}')">Salin</button>
-                                <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${folder.id}', 'folder', '${folder.name}')">Hapus</button>
-                            </td>
-                        `;
-                        list.appendChild(tr);
-                    });
-                }
-
-                // Render File
-                if (res.files && res.files.length > 0) {
-                    res.files.forEach(file => {
-                        const tr = document.createElement('tr');
-                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-                        tr.innerHTML = `
-                            <td style="padding: 10px; text-align: center;"><input type="checkbox" class="remote-item-checkbox" data-id="${file.id}" data-type="file" data-name="${file.name}" onclick="updateRemoteSelectedCount()" style="cursor: pointer; transform: scale(1.1);"></td>
-                            <td style="padding: 10px; color: #fff;">📄 ${file.name}</td>
-                            <td style="padding: 10px; color: #aaa;">${formatBytes(file.size)}</td>
-                            <td style="padding: 10px; text-align: right;" class="col-actions">
-                                <select class="btn-table" style="background: rgba(46, 213, 115, 0.1); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.2); outline: none; cursor: pointer; padding: 3px 4px; width: 75px;" onchange="changeRemoteShare(this, '${file.id}', 'file', '${file.name}')">
-                                    <option value="" disabled selected hidden>Share</option>
-                                    <option value="private" style="background: #191432; color: #ff4757;">🔒 Privat</option>
-                                    <option value="view" style="background: #191432; color: #2ed573;">👁️ View Only</option>
-                                    <option value="edit" style="background: #191432; color: #00d2ff;">✏️ Editor</option>
-                                </select>
-                                <button class="btn-table" style="background: var(--primary); color: white;" onclick="copyRemoteItemToMain('${file.id}', 'file', '${file.name}')">Salin</button>
-                                <button class="btn-table btn-table-danger" onclick="deleteRemoteItem('${file.id}', 'file', '${file.name}')">Hapus</button>
-                            </td>
-                        `;
-                        list.appendChild(tr);
-                    });
-                }
-
-                if ((!res.folders || res.folders.length === 0) && (!res.files || res.files.length === 0)) {
-                    list.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: #888;">Pencarian tidak menemukan item.</td></tr>`;
-                }
+                lastRemoteFolderData = res;
+                renderRemoteItems(res);
             } else {
                 throw new Error(res.message);
             }
@@ -2942,6 +3110,137 @@
 
     function pad(n) {
         return n.toString().padStart(2, '0');
+    }
+
+    // --- HISTORY CLIENT MANAGEMENT ---
+    let historyCache = [];
+    async function loadHistoryList() {
+        const tbody = document.getElementById('historyList');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888;">Memuat riwayat transaksi...</td></tr>';
+        
+        try {
+            const res = await sendRequest({ action: 'get_history_list' });
+            if (res.status === 'success') {
+                historyCache = res.list || [];
+                tbody.innerHTML = '';
+                
+                if (historyCache.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888;">Belum ada riwayat transaksi.</td></tr>';
+                    return;
+                }
+                
+                historyCache.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+                    
+                    let statusBadge = '';
+                    if (item.status === 'success') {
+                        statusBadge = '<span style="background: rgba(46, 213, 115, 0.15); color: #2ed573; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;">Sukses</span>';
+                    } else if (item.status === 'warning') {
+                        statusBadge = '<span style="background: rgba(255, 159, 26, 0.15); color: #ffa801; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;">Peringatan</span>';
+                    } else if (item.status === 'stopped') {
+                        statusBadge = '<span style="background: rgba(255, 71, 87, 0.15); color: #ff4757; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;">Dibatalkan</span>';
+                    } else {
+                        statusBadge = `<span style="background: rgba(255,255,255,0.1); color: #ccc; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem;">${item.status}</span>`;
+                    }
+                    
+                    const sourceLink = `<a href="${item.sourceUrl}" target="_blank" style="color: #00d2ff; text-decoration: none; font-weight: 500;">${item.sourceName}</a>`;
+                    const targetLink = item.targetUrl && item.targetUrl !== '#' 
+                        ? `<a href="${item.targetUrl}" target="_blank" style="color: #2ed573; text-decoration: none;">Target Folder</a>`
+                        : `<span style="color: #aaa;">Remote Server</span>`;
+                        
+                    tr.innerHTML = `
+                        <td style="padding: 10px; color: #aaa; font-size: 0.8rem;">${item.time}</td>
+                        <td style="padding: 10px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sourceLink}</td>
+                        <td style="padding: 10px;">${targetLink}</td>
+                        <td style="padding: 10px; color: #eee; font-size: 0.8rem;">${formatMode(item.mode)}</td>
+                        <td style="padding: 10px; color: #eee; font-size: 0.8rem;">${item.processedFiles}/${item.totalFiles} (${formatBytes(item.totalSize)})</td>
+                        <td style="padding: 10px;">${statusBadge}</td>
+                        <td style="padding: 10px; text-align: right;">
+                            <button class="btn-table" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);" onclick="showHistoryDetails(${index})">Detail</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(e) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--error);">Gagal memuat riwayat: ${e.message}</td></tr>`;
+        }
+    }
+    
+    function formatMode(m) {
+        if (!m) return "-";
+        if (m.indexOf('copy') > -1) return "🔵 Copy";
+        if (m.indexOf('rename') > -1) return "✏️ Rename";
+        if (m.indexOf('move') > -1) return "📦 Move";
+        return m;
+    }
+
+    async function clearHistoryList() {
+        const confirmClear = await Swal.fire({
+            title: 'Hapus Semua Riwayat?',
+            text: 'Tindakan ini akan mengosongkan seluruh log riwayat transaksi duplikasi Anda.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            background: '#111',
+            color: '#fff',
+            confirmButtonColor: '#ff4757'
+        });
+        
+        if (confirmClear.isConfirmed) {
+            Swal.fire({ title: 'Menghapus...', background: '#111', color: '#fff', didOpen: () => { Swal.showLoading(); } });
+            try {
+                const res = await sendRequest({ action: 'clear_history_list' });
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Terhapus!', text: 'Seluruh riwayat berhasil dibersihkan.', background: '#111', color: '#fff' });
+                    loadHistoryList();
+                } else {
+                    throw new Error(res.message);
+                }
+            } catch(e) {
+                Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, background: '#111', color: '#fff' });
+            }
+        }
+    }
+
+    function showHistoryDetails(index) {
+        const item = historyCache[index];
+        if (!item) return;
+        
+        let errorDetails = "";
+        if (item.errors && item.errors.length > 0) {
+            errorDetails += `<h4 style="color:#ff4757; text-align:left; margin-top:15px; margin-bottom:8px;">Daftar Error (${item.errors.length}):</h4>`;
+            errorDetails += `<div style="max-height:180px; overflow-y:auto; text-align:left; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; font-family:monospace; font-size:0.75rem;">`;
+            item.errors.forEach((err, i) => {
+                errorDetails += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px; margin-bottom:4px; color:#ff6b81; word-break:break-all;">${i+1}. <b>${err.name}</b>: ${err.error}</div>`;
+            });
+            errorDetails += `</div>`;
+        } else {
+            errorDetails = `<div style="text-align:center; color:#2ed573; font-weight:500; margin-top:15px; background:rgba(46,213,115,0.1); padding:10px; border-radius:8px; border:1px solid rgba(46,213,115,0.2);">✅ Selesai sempurna tanpa error.</div>`;
+        }
+
+        Swal.fire({
+            title: 'Detail Tugas Duplikasi',
+            html: `
+                <div style="text-align:left; font-size:0.85rem; color:#ccc; font-family:'Poppins', sans-serif;">
+                    <p style="margin-bottom:6px;"><b>ID Tugas:</b> <code style="background:rgba(255,255,255,0.05); padding:2px 4px; border-radius:4px;">${item.id}</code></p>
+                    <p style="margin-bottom:6px;"><b>Waktu Mulai:</b> ${item.time}</p>
+                    <p style="margin-bottom:6px;"><b>Sumber:</b> <a href="${item.sourceUrl}" target="_blank" style="color:#00d2ff; text-decoration:none; font-weight:500;">${item.sourceName}</a></p>
+                    <p style="margin-bottom:6px;"><b>Target:</b> ${item.targetUrl && item.targetUrl !== '#' ? `<a href="${item.targetUrl}" target="_blank" style="color:#2ed573; text-decoration:none; font-weight:500;">Buka Folder Target 📂</a>` : '<span style="color:#aaa;">Remote Server</span>'}</p>
+                    <p style="margin-bottom:6px;"><b>Mode Duplikasi:</b> ${item.mode}</p>
+                    <p style="margin-bottom:6px;"><b>Kemajuan:</b> ${item.processedFiles} dari ${item.totalFiles} file disalin</p>
+                    <p style="margin-bottom:6px;"><b>Total Ukuran:</b> ${formatBytes(item.totalSize)}</p>
+                    ${errorDetails}
+                </div>
+            `,
+            background: '#111',
+            color: '#fff',
+            confirmButtonText: 'Tutup'
+        });
     }
 </script>
 

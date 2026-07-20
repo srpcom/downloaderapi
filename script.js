@@ -109,6 +109,9 @@ function doPost(e) {
     if (action === 'get_schedule_list') return handleGetScheduleList(data);
     if (action === 'send_report') return handleReportAndLog(data);
     if (action === 'get_log_sheet_url') return responseJSON({ status:'success', url: getSpreadsheet().getUrl() });
+    if (action === 'get_history_list') return responseJSON({ status: 'success', list: loadHistoryList() });
+    if (action === 'clear_history_list') { saveHistoryList([]); return responseJSON({ status: 'success' }); }
+    if (action === 'stop_job') return handleStopJob(data);
     
     return responseJSON({ status: 'error', message: "Unknown Action" });
   } catch (error) { return responseJSON({ status: 'error', message: error.toString() }); }
@@ -407,7 +410,8 @@ function handleInitialize(data) {
         queue: [], rootTargetUrl: finalTargetUrl, renamePrefix: data.renamePrefix || "[MOVED] ",
         isSchedule: data.isSchedule, scheduleId: data.scheduleId, sourceUrl: sourceUrl, 
         targetParentIdForRetention: targetParentId, maxBackups: data.maxBackups, remoteTargetUrl: data.remoteTargetUrl,
-        sourceName: sourceName, sourceOwner: sourceOwner, sourceAccess: sourceAccess, sourceId: sourceId
+        sourceName: sourceName, sourceOwner: sourceOwner, sourceAccess: sourceAccess, sourceId: sourceId,
+        errors: []
     };
     
     if (isFolder) {
@@ -462,11 +466,11 @@ function scanFolderRecursive(folder, targetId, queue, isDry, filters, isRemoteTa
 }
 
 function handleBatch(jobId) {
-  var BATCH = 30; var items = []; var job = null; var lock = LockService.getScriptLock(); lock.waitLock(10000); 
+  var BATCH = 10; var items = []; var job = null; var lock = LockService.getScriptLock(); lock.waitLock(10000); 
   try {
     job = loadJobState(jobId); if (!job) return responseJSON({ status: 'error', message: "Job Expired" });
     
-        if (job.queue.length === 0) { 
+    if (job.queue.length === 0) { 
         if(job.isSchedule && !job.remoteTargetUrl) cleanupOldBackups(job.targetParentIdForRetention, "Backup ", job.maxBackups);
         var finalProcessed = job.processedFiles; var finalTotal = job.totalFiles; 
         
@@ -496,6 +500,27 @@ function handleBatch(jobId) {
             sendTelegramNotification(summaryMsg);
             logJobToSheet(job, finalTotal, finalSize);
         } catch(e) { console.log("Error summary: " + e.message); }
+
+        // Tambahkan ke Riwayat
+        try {
+            var historyItem = {
+                id: jobId,
+                time: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss"),
+                sourceName: job.sourceName,
+                sourceUrl: job.sourceUrl,
+                targetUrl: job.rootTargetUrl,
+                totalFiles: finalTotal,
+                processedFiles: finalProcessed,
+                totalSize: finalSize,
+                status: (job.errors && job.errors.length > 0) ? "warning" : "success",
+                mode: job.mode,
+                errors: job.errors || []
+            };
+            addHistoryItem(historyItem);
+        } catch(hErr) {
+            console.log("Error adding to history: " + hErr.toString());
+        }
+
         deleteJobState(jobId); 
         try { CacheService.getScriptCache().remove("size_" + jobId); } catch(e) {}
         return responseJSON({ status: 'success', action: 'complete', progress: { percent: 100, processed: finalProcessed, total: finalTotal, currentSize: formatBytes(finalSize) } }); 
@@ -537,11 +562,6 @@ function handleBatch(jobId) {
                 else { copiedFile = sourceFile.makeCopy(cleanName, destF); newUrl = copiedFile.getUrl(); info = "Duplicated"; }
             } else { copiedFile = sourceFile.makeCopy(cleanName, destF); newUrl = copiedFile.getUrl(); }
             
-            // Menggunakan it.size dari sumber asli. Google Drive API sering return 0 B untuk file yang baru saja di-copy
-            // if (copiedFile && status !== 'skipped') {
-            //     try { fileSize = copiedFile.getSize(); } catch(e) {}
-            // }
-            
             // Jika mode Move, hapus file sumber asli setelah berhasil di-copy
             if (job.mode.startsWith('move') && status !== 'skipped') {
                 try {
@@ -556,23 +576,31 @@ function handleBatch(jobId) {
             sizeAdded += fileSize;
         }
         processed.push({ name: it.name, url: newUrl, size: formatBytes(fileSize), status: status, info: info });
-    } catch (e) { processed.push({ name: it.name, status: 'error', info: e.message }); }
-  }
-  
-  if (sizeAdded > 0) {
-    var jobLock = LockService.getScriptLock();
-    if (jobLock.tryLock(15000)) {
-      try {
-        var cache = CacheService.getScriptCache();
-        var currentCachedSize = Number(cache.get("size_" + jobId) || 0);
-        cache.put("size_" + jobId, String(currentCachedSize + sizeAdded), 21600); // 6 hours
-      } finally {
-        jobLock.releaseLock();
-      }
+    } catch (e) { 
+        processed.push({ name: it.name, status: 'error', info: e.message }); 
+        if (!job.errors) job.errors = [];
+        job.errors.push({ name: it.name, error: e.message });
     }
   }
   
-  return responseJSON({ status: 'success', action: 'continue', jobId: jobId, processedList: processed, progress: { processed: job.processedFiles, total: job.totalFiles, percent: Math.round((job.processedFiles/job.totalFiles)*100) } });
+  // Simpan intermediate state (progress size & errors)
+  var jobLock = LockService.getScriptLock();
+  if (jobLock.tryLock(15000)) {
+    try {
+      var cache = CacheService.getScriptCache();
+      var currentCachedSize = Number(cache.get("size_" + jobId) || 0);
+      if (sizeAdded > 0) {
+        currentCachedSize = currentCachedSize + sizeAdded;
+        cache.put("size_" + jobId, String(currentCachedSize), 21600); // 6 hours
+      }
+      job.processedSize = currentCachedSize;
+      saveJobState(job);
+    } finally {
+      jobLock.releaseLock();
+    }
+  }
+  
+  return responseJSON({ status: 'success', action: 'continue', jobId: jobId, processedList: processed, progress: { processed: job.processedFiles, total: job.totalFiles, percent: Math.round((job.processedFiles/job.totalFiles)*100), currentSize: formatBytes(job.processedSize || 0) } });
 }
 
 // ============================================================================
@@ -1046,5 +1074,59 @@ function decodeJwtServer(token) {
     return JSON.parse(decoded);
   } catch(e) {
     return null;
+  }
+}
+
+// --- HISTORY MANAGEMENT HELPERS ---
+function loadHistoryList() {
+  try {
+    var x = getSystemFolder().getFilesByName("history_list.json");
+    return x.hasNext() ? JSON.parse(x.next().getBlob().getDataAsString()) : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveHistoryList(d) {
+  var f = getSystemFolder();
+  var x = f.getFilesByName("history_list.json");
+  if(x.hasNext()) x.next().setContent(JSON.stringify(d));
+  else f.createFile("history_list.json", JSON.stringify(d));
+}
+
+function addHistoryItem(item) {
+  var list = loadHistoryList();
+  list.unshift(item); // Newer items first
+  if (list.length > 100) list = list.slice(0, 100);
+  saveHistoryList(list);
+}
+
+function handleStopJob(data) {
+  try {
+    var jobId = data.jobId;
+    var job = loadJobState(jobId);
+    if (job) {
+      var finalSize = Number(CacheService.getScriptCache().get("size_" + jobId) || job.processedSize || 0);
+      var historyItem = {
+        id: jobId,
+        time: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss"),
+        sourceName: job.sourceName,
+        sourceUrl: job.sourceUrl,
+        targetUrl: job.rootTargetUrl,
+        totalFiles: job.totalFiles,
+        processedFiles: job.processedFiles,
+        totalSize: finalSize,
+        status: "stopped",
+        mode: job.mode,
+        errors: job.errors || []
+      };
+      addHistoryItem(historyItem);
+      deleteJobState(jobId);
+      try { CacheService.getScriptCache().remove("size_" + jobId); } catch(e) {}
+      return responseJSON({ status: 'success', message: "Job Stopped." });
+    }
+    return responseJSON({ status: 'error', message: "Job not found or already completed." });
+  } catch(e) {
+    return responseJSON({ status: 'error', message: e.message });
   }
 }
