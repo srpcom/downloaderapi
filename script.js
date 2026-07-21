@@ -827,6 +827,7 @@ function handleRemoteProxy(data) {
     if (data.itemId) payload.itemId = data.itemId;
     if (data.itemType) payload.itemType = data.itemType;
     if (data.permission) payload.permission = data.permission;
+    if (data.ids) payload.ids = data.ids;
     
     var response = UrlFetchApp.fetch(node.url, {
       method: 'post',

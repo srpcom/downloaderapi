@@ -245,6 +245,26 @@ function doPost(e) {
       return responseJSON({ status: 'success', message: msg });
     }
     
+    if (action === 'unlock_files') {
+      var ids = data.ids || [];
+      var c = 0;
+      for (var i = 0; i < ids.length; i++) {
+        try {
+          var item = ids[i];
+          var itemId = typeof item === 'object' ? item.id : item;
+          var itemType = typeof item === 'object' ? item.type : 'file';
+          
+          if (itemType === 'folder') {
+            DriveApp.getFolderById(itemId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          } else {
+            DriveApp.getFileById(itemId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          }
+          c++;
+        } catch(e) {}
+      }
+      return responseJSON({ status: 'success', unlocked: c });
+    }
+    
     if (action === 'prepare_destination') {
       return responseJSON({ status: 'success', message: "Koneksi teruji. Node siap menerima transfer data." });
     }

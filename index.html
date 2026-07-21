@@ -1051,6 +1051,7 @@
                     <button onclick="refreshRemoteFolder()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">🔄 Refresh</button>
                     <button onclick="createRemoteFolder()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; color: #2ed573;">📁 Buat Folder</button>
                     <button id="copySelectedBtn" onclick="copySelectedRemoteItems()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: linear-gradient(135deg, #00d2ff, #0081ff); border: none; border-radius: 8px; color: white; display: none; font-weight: 500; cursor: pointer;">📋 Salin Terpilih (<span id="selectedRemoteCount">0</span>)</button>
+                    <button id="unlockSelectedBtn" onclick="unlockSelectedRemoteItems()" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255, 159, 26, 0.15); border: 1px solid rgba(255, 159, 26, 0.4); border-radius: 8px; color: #ffa801; display: none; font-weight: 500; cursor: pointer;">🔓 Buka Akses (<span id="unlockedRemoteCount">0</span>)</button>
                     <button onclick="toggleExplorerLayout()" id="explorerLayoutBtn" class="action-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">📱 Grid View</button>
                 </div>
                 
@@ -2771,12 +2772,24 @@
         const countSpan = document.getElementById('selectedRemoteCount');
         const btn = document.getElementById('copySelectedBtn');
         
+        const countSpanUnlock = document.getElementById('unlockedRemoteCount');
+        const unlockBtn = document.getElementById('unlockSelectedBtn');
+        
         if (countSpan) countSpan.textContent = checkedCount;
         if (btn) {
             if (checkedCount > 0) {
                 btn.style.display = 'inline-block';
             } else {
                 btn.style.display = 'none';
+            }
+        }
+        
+        if (countSpanUnlock) countSpanUnlock.textContent = checkedCount;
+        if (unlockBtn) {
+            if (checkedCount > 0) {
+                unlockBtn.style.display = 'inline-block';
+            } else {
+                unlockBtn.style.display = 'none';
             }
         }
         
@@ -2819,6 +2832,90 @@
             background: '#111',
             color: '#fff'
         });
+    }
+
+    async function unlockSelectedRemoteItems() {
+        const checkboxes = document.querySelectorAll('.remote-item-checkbox');
+        const selected = Array.from(checkboxes).filter(cb => cb.checked);
+        if (selected.length === 0) return;
+        
+        const ids = selected.map(cb => {
+            return {
+                id: cb.getAttribute('data-id'),
+                type: cb.getAttribute('data-type')
+            };
+        });
+        
+        const confirmUnlock = await Swal.fire({
+            title: `Buka Akses ${ids.length} Item?`,
+            text: 'Ini akan mengubah hak akses semua file/folder remote yang dipilih menjadi "Siapa saja dengan link dapat melihat" (Viewer) agar dapat disalin oleh akun utama.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--primary)',
+            cancelButtonColor: 'var(--accent)',
+            confirmButtonText: 'Ya, Buka Kunci!',
+            cancelButtonText: 'Batal',
+            background: '#111',
+            color: '#fff'
+        });
+        
+        if (!confirmUnlock.isConfirmed) return;
+        
+        Swal.fire({
+            title: 'Membuka Kunci Akses...',
+            text: 'Menghubungi remote node untuk memperbarui hak akses file...',
+            allowOutsideClick: false,
+            background: '#111',
+            color: '#fff',
+            didOpen: () => { Swal.showLoading(); }
+        });
+        
+        try {
+            const res = await sendRequest({
+                action: 'remote_proxy',
+                nodeId: activeNodeId,
+                remoteAction: 'unlock_files',
+                ids: ids
+            });
+            
+            if (res.status === 'success') {
+                // Setelah sukses unlock, salin ke cloner utama
+                let urls = [];
+                selected.forEach(cb => {
+                    const id = cb.getAttribute('data-id');
+                    const type = cb.getAttribute('data-type');
+                    const url = type === 'folder' 
+                        ? `https://drive.google.com/drive/folders/${id}`
+                        : `https://drive.google.com/open?id=${id}`;
+                    urls.push(url);
+                });
+                
+                const folderUrlsInput = document.getElementById('folderUrls');
+                folderUrlsInput.value = urls.join('\n');
+                
+                // Switch tab
+                switchTab('cloner');
+                closeExplorer();
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Buka Akses & Salin Sukses!',
+                    text: `${res.unlocked} item berhasil dibuka kuncinya dan ditambahkan ke input Cloner utama. Siap diduplikasi!`,
+                    background: '#111',
+                    color: '#fff'
+                });
+            } else {
+                throw new Error(res.message || 'Gagal membuka akses');
+            }
+        } catch(err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Membuka Akses',
+                text: err.message,
+                background: '#111',
+                color: '#fff'
+            });
+        }
     }
 
     // --- TAB 6: SCHEDULER ENGINE ---
