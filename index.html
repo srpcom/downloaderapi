@@ -2871,12 +2871,49 @@
         });
         
         try {
-            const res = await sendRequest({
+            let res = await sendRequest({
                 action: 'remote_proxy',
                 nodeId: activeNodeId,
                 remoteAction: 'unlock_files',
                 ids: ids
             });
+            
+            // Fallback jika remote node lama tidak mengenal aksi 'unlock_files'
+            if (res.status === 'error' && (res.message.indexOf('tidak dikenal') > -1 || res.message.indexOf('Unknown Action') > -1)) {
+                Swal.fire({
+                    title: 'Metode Batch Tidak Didukung',
+                    text: 'Remote node menggunakan script lama. Membuka akses berkas satu per satu...',
+                    allowOutsideClick: false,
+                    background: '#111',
+                    color: '#fff',
+                    didOpen: () => { Swal.showLoading(); }
+                });
+                
+                let successCount = 0;
+                for (let i = 0; i < ids.length; i++) {
+                    try {
+                        const singleRes = await sendRequest({
+                            action: 'remote_proxy',
+                            nodeId: activeNodeId,
+                            remoteAction: 'share_item',
+                            itemId: ids[i].id,
+                            itemType: ids[i].type,
+                            permission: 'view'
+                        });
+                        if (singleRes.status === 'success') {
+                            successCount++;
+                        }
+                    } catch(errSingle) {
+                        console.error("Error unlocking single item:", ids[i].id, errSingle);
+                    }
+                }
+                
+                if (successCount > 0) {
+                    res = { status: 'success', unlocked: successCount };
+                } else {
+                    throw new Error("Gagal membuka akses semua item terpilih.");
+                }
+            }
             
             if (res.status === 'success') {
                 // Setelah sukses unlock, salin ke cloner utama
