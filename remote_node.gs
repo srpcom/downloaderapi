@@ -277,9 +277,32 @@ function doPost(e) {
       var renamePrefix = data.renamePrefix || "[MOVED] ";
       
       var destFolder = (!folderId || folderId === "root" || folderId === "Remote Server") ? DriveApp.getRootFolder() : DriveApp.getFolderById(folderId);
-      var sourceFile = DriveApp.getFileById(fileId);
+      var sourceFile = null;
       var copiedFile = null;
       var info = "Remote Saved";
+      
+      try {
+        sourceFile = DriveApp.getFileById(fileId);
+      } catch(e) {
+        try {
+          var downloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId;
+          var fetchRes = UrlFetchApp.fetch(downloadUrl, { muteHttpExceptions: true });
+          if (fetchRes.getResponseCode() === 200 && fetchRes.getBlob().getBytes().length > 0) {
+            var blob = fetchRes.getBlob().setName(name);
+            copiedFile = destFolder.createFile(blob);
+            return responseJSON({
+              status: 'success',
+              newUrl: copiedFile.getUrl(),
+              newId: copiedFile.getId(),
+              info: "Remote Downloaded"
+            });
+          } else {
+            throw new Error("HTTP Status " + fetchRes.getResponseCode());
+          }
+        } catch(fetchErr) {
+          throw new Error("Akses Berkas Ditolak (" + e.message + "). Pastikan berkas publik Viewer atau akun remote ditambahkan sebagai Viewer.");
+        }
+      }
       
       var existing = destFolder.getFilesByName(name);
       if (existing.hasNext()) {
