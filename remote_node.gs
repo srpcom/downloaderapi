@@ -301,26 +301,35 @@ function doPost(e) {
 
       // Strategi 1: Duplikasi langsung via DriveApp API
       try {
+        console.log("Remote: Mengambil file dengan ID: " + fileId + ", resourceKey: " + resourceKey);
         var sourceFile = resourceKey ? DriveApp.getFileByIdAndResourceKey(fileId, resourceKey) : DriveApp.getFileById(fileId);
+        console.log("Remote: Mencoba makeCopy ke folder target: " + destFolder.getId() + " dengan nama: " + targetName);
         copiedFile = sourceFile.makeCopy(targetName, destFolder);
+        console.log("Remote: Berhasil makeCopy!");
       } catch (copyErr) {
+        console.log("Remote: Strategi 1 gagal: " + copyErr.toString() + ". Mencoba Strategi 2 (Download Fallback)...");
         // Strategi 2: Fallback ke Stream Download jika DriveApp melempar permission/ID error
         try {
           var downloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId + "&confirm=t";
           if (resourceKey) {
             downloadUrl += "&resourcekey=" + resourceKey;
           }
+          console.log("Remote: Mengunduh dari URL: " + downloadUrl);
           var fetchRes = UrlFetchApp.fetch(downloadUrl, { muteHttpExceptions: true });
           var blob = fetchRes.getBlob();
+          console.log("Remote: HTTP Respon Code: " + fetchRes.getResponseCode() + ", ukuran blob: " + blob.getBytes().length);
           if (fetchRes.getResponseCode() === 200 && blob.getBytes().length > 0) {
             blob.setName(targetName);
             copiedFile = destFolder.createFile(blob);
             info = info + " (Downloaded)";
+            console.log("Remote: Berhasil mengunduh dan menyimpan berkas!");
           } else {
-            throw new Error("HTTP Download Code " + fetchRes.getResponseCode());
+            throw new Error("HTTP Status " + fetchRes.getResponseCode() + " / Blob Kosong");
           }
         } catch (fetchErr) {
-          throw new Error("Gagal menyalin (" + copyErr.message + ")");
+          var detailMsg = "DriveApp: " + copyErr.message + " | Fallback: " + fetchErr.message;
+          console.log("Remote: Kedua strategi gagal: " + detailMsg);
+          throw new Error(detailMsg);
         }
       }
       
@@ -335,7 +344,8 @@ function doPost(e) {
     return responseJSON({ status: 'error', message: "Tindakan (action) tidak dikenal." });
     
   } catch(err) {
-    return responseJSON({ status: 'error', message: err.message });
+    console.log("Remote Exception: " + err.toString() + "\nStack: " + err.stack);
+    return responseJSON({ status: 'error', message: err.message, stack: err.stack });
   }
 }
 
