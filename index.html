@@ -771,6 +771,13 @@
     <!-- CLONER TAB -->
     <div class="tab-content active" id="tab-clone">
         <div class="form-group">
+            <label for="targetAccountSelect">Akun Tujuan Duplikasi</label>
+            <select id="targetAccountSelect" onchange="onTargetAccountChange()" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; font-size: 0.95rem; outline: none; cursor: pointer;">
+                <option value="local">🏠 Drive Utama (Lokal)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label for="destUrl">Folder Tujuan (Opsional)</label>
             <input type="text" id="destUrl" placeholder="Link folder tujuan Google Drive (jika kosong = Default)">
         </div>
@@ -1568,6 +1575,15 @@
             email: document.getElementById('emailNotif').value
         };
 
+        const targetAccVal = document.getElementById('targetAccountSelect').value;
+        if (targetAccVal !== 'local') {
+            const selectedNode = (window.remoteAccountsData || []).find(n => (n.id && n.id === targetAccVal) || n.url === targetAccVal);
+            if (selectedNode) {
+                config.remoteTargetUrl = selectedNode.url;
+                config.remoteToken = selectedNode.token || "";
+            }
+        }
+
         if (config.mode.startsWith('rename_') || config.mode.startsWith('move_')) {
             const isMove = config.mode.startsWith('move_');
             const confirmAction = await Swal.fire({
@@ -1595,8 +1611,15 @@
         currentSessionLogs = [];
         addLog(`🔐 Autentikasi Berhasil | Mode: ${config.mode.toUpperCase()}`, 'info');
         
-        if (destUrl) addLog(`📂 Folder Target Kustom Dideteksi`, 'info');
-        else addLog(`📂 Menggunakan Folder Target Default`, 'info');
+        if (config.remoteTargetUrl) {
+            const selNode = (window.remoteAccountsData || []).find(n => n.url === config.remoteTargetUrl);
+            const labelStr = selNode ? `${selNode.label} (${selNode.email})` : config.remoteTargetUrl;
+            addLog(`🔌 Target Duplikasi: Remote Node "${labelStr}"`, 'info');
+        } else if (destUrl) {
+            addLog(`📂 Folder Target Kustom Dideteksi`, 'info');
+        } else {
+            addLog(`📂 Menggunakan Folder Target Default (Lokal)`, 'info');
+        }
         
         if (newFolderName) addLog(`📁 Sub-folder Baru Akan Dibuat: "${newFolderName}"`, 'info');
         if (config.mode.startsWith('rename_')) addLog(`✏️ Rename Prefix Sumber: "${renamePrefix}"`, 'info');
@@ -2147,6 +2170,20 @@
         history.scrollTop = history.scrollHeight;
     }
 
+    function onTargetAccountChange() {
+        const sel = document.getElementById('targetAccountSelect');
+        const destInput = document.getElementById('destUrl');
+        if (!sel || !destInput) return;
+        if (sel.value === 'local') {
+            destInput.placeholder = "Link folder tujuan Google Drive (jika kosong = Default)";
+        } else {
+            const selectedNode = (window.remoteAccountsData || []).find(n => (n.id && n.id === sel.value) || n.url === sel.value);
+            if (selectedNode) {
+                destInput.placeholder = `Link/ID Folder di Remote "${selectedNode.label}" (Opsional, kosong = Root Remote)`;
+            }
+        }
+    }
+
     // --- TAB 5: REMOTE NODES ---
     async function loadRemoteNodes() {
         if(!ssoToken && !loginPassword) return;
@@ -2154,6 +2191,24 @@
             const res = await sendRequest({ action: 'get_remote_accounts' });
             const tbody = document.getElementById('remoteList');
             tbody.innerHTML = '';
+
+            window.remoteAccountsData = (res.status === 'success' && res.list) ? res.list : [];
+            
+            // Populasikan options untuk targetAccountSelect pada Tab Cloner
+            const targetSelect = document.getElementById('targetAccountSelect');
+            if (targetSelect) {
+                const currentVal = targetSelect.value;
+                targetSelect.innerHTML = `<option value="local">🏠 Drive Utama (Lokal)</option>`;
+                if (window.remoteAccountsData.length > 0) {
+                    window.remoteAccountsData.forEach(node => {
+                        const opt = document.createElement('option');
+                        opt.value = node.id || node.url;
+                        opt.textContent = `🔌 Remote: ${node.label} (${node.email})`;
+                        targetSelect.appendChild(opt);
+                    });
+                }
+                targetSelect.value = currentVal || 'local';
+            }
 
             if (res.status === 'success' && res.list && res.list.length > 0) {
                 res.list.forEach(node => {
