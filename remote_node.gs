@@ -272,6 +272,7 @@ function doPost(e) {
     
     if (action === 'absorb_file') {
       var fileId = data.fileId;
+      var resourceKey = data.resourceKey || "";
       var folderId = data.folderId;
       var name = (data.name || "File Salinan").trim();
       var mode = data.mode || "copy_duplicate";
@@ -300,12 +301,15 @@ function doPost(e) {
 
       // Strategi 1: Duplikasi langsung via DriveApp API
       try {
-        var sourceFile = DriveApp.getFileById(fileId);
+        var sourceFile = resourceKey ? DriveApp.getFileByIdAndResourceKey(fileId, resourceKey) : DriveApp.getFileById(fileId);
         copiedFile = sourceFile.makeCopy(targetName, destFolder);
       } catch (copyErr) {
         // Strategi 2: Fallback ke Stream Download jika DriveApp melempar permission/ID error
         try {
           var downloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId + "&confirm=t";
+          if (resourceKey) {
+            downloadUrl += "&resourcekey=" + resourceKey;
+          }
           var fetchRes = UrlFetchApp.fetch(downloadUrl, { muteHttpExceptions: true });
           var blob = fetchRes.getBlob();
           if (fetchRes.getResponseCode() === 200 && blob.getBytes().length > 0) {
