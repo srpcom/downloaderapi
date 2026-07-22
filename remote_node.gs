@@ -269,6 +269,46 @@ function doPost(e) {
       return responseJSON({ status: 'success', message: "Koneksi teruji. Node siap menerima transfer data." });
     }
     
+    if (action === 'absorb_file') {
+      var fileId = data.fileId;
+      var folderId = data.folderId;
+      var name = (data.name || "File Salinan").trim();
+      var mode = data.mode || "copy_duplicate";
+      var renamePrefix = data.renamePrefix || "[MOVED] ";
+      
+      var destFolder = (!folderId || folderId === "root" || folderId === "Remote Server") ? DriveApp.getRootFolder() : DriveApp.getFolderById(folderId);
+      var sourceFile = DriveApp.getFileById(fileId);
+      var copiedFile = null;
+      var info = "Remote Saved";
+      
+      var existing = destFolder.getFilesByName(name);
+      if (existing.hasNext()) {
+        if (mode === 'copy_skip' || mode === 'move_skip') {
+          var firstEx = existing.next();
+          return responseJSON({ status: 'success', newUrl: firstEx.getUrl(), newId: firstEx.getId(), info: "Skipped" });
+        } else if (mode === 'copy_replace' || mode === 'move_replace') {
+          while (existing.hasNext()) { existing.next().setTrashed(true); }
+          copiedFile = sourceFile.makeCopy(name, destFolder);
+          info = "Remote Replaced";
+        } else if (mode.indexOf('rename') > -1) {
+          copiedFile = sourceFile.makeCopy(renamePrefix + name, destFolder);
+          info = "Remote Renamed";
+        } else {
+          copiedFile = sourceFile.makeCopy(name, destFolder);
+          info = "Remote Duplicated";
+        }
+      } else {
+        copiedFile = sourceFile.makeCopy(name, destFolder);
+      }
+      
+      return responseJSON({
+        status: 'success',
+        newUrl: copiedFile.getUrl(),
+        newId: copiedFile.getId(),
+        info: info
+      });
+    }
+    
     return responseJSON({ status: 'error', message: "Tindakan (action) tidak dikenal." });
     
   } catch(err) {
