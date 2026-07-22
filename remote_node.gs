@@ -277,51 +277,46 @@ function doPost(e) {
       var renamePrefix = data.renamePrefix || "[MOVED] ";
       
       var destFolder = (!folderId || folderId === "root" || folderId === "Remote Server") ? DriveApp.getRootFolder() : DriveApp.getFolderById(folderId);
-      var sourceFile = null;
       var copiedFile = null;
       var info = "Remote Saved";
+      var targetName = name;
       
-      try {
-        sourceFile = DriveApp.getFileById(fileId);
-      } catch(e) {
-        try {
-          var downloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId;
-          var fetchRes = UrlFetchApp.fetch(downloadUrl, { muteHttpExceptions: true });
-          if (fetchRes.getResponseCode() === 200 && fetchRes.getBlob().getBytes().length > 0) {
-            var blob = fetchRes.getBlob().setName(name);
-            copiedFile = destFolder.createFile(blob);
-            return responseJSON({
-              status: 'success',
-              newUrl: copiedFile.getUrl(),
-              newId: copiedFile.getId(),
-              info: "Remote Downloaded"
-            });
-          } else {
-            throw new Error("HTTP Status " + fetchRes.getResponseCode());
-          }
-        } catch(fetchErr) {
-          throw new Error("Akses Berkas Ditolak (" + e.message + "). Pastikan berkas publik Viewer atau akun remote ditambahkan sebagai Viewer.");
-        }
-      }
-      
-      var existing = destFolder.getFilesByName(name);
+      var existing = destFolder.getFilesByName(targetName);
       if (existing.hasNext()) {
         if (mode === 'copy_skip' || mode === 'move_skip') {
           var firstEx = existing.next();
           return responseJSON({ status: 'success', newUrl: firstEx.getUrl(), newId: firstEx.getId(), info: "Skipped" });
         } else if (mode === 'copy_replace' || mode === 'move_replace') {
           while (existing.hasNext()) { existing.next().setTrashed(true); }
-          copiedFile = sourceFile.makeCopy(name, destFolder);
           info = "Remote Replaced";
         } else if (mode.indexOf('rename') > -1) {
-          copiedFile = sourceFile.makeCopy(renamePrefix + name, destFolder);
+          targetName = renamePrefix + name;
           info = "Remote Renamed";
         } else {
-          copiedFile = sourceFile.makeCopy(name, destFolder);
           info = "Remote Duplicated";
         }
-      } else {
-        copiedFile = sourceFile.makeCopy(name, destFolder);
+      }
+
+      // Strategi 1: Duplikasi langsung via DriveApp API
+      try {
+        var sourceFile = DriveApp.getFileById(fileId);
+        copiedFile = sourceFile.makeCopy(targetName, destFolder);
+      } catch (copyErr) {
+        // Strategi 2: Fallback ke Stream Download jika DriveApp melempar permission/ID error
+        try {
+          var downloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId + "&confirm=t";
+          var fetchRes = UrlFetchApp.fetch(downloadUrl, { muteHttpExceptions: true });
+          var blob = fetchRes.getBlob();
+          if (fetchRes.getResponseCode() === 200 && blob.getBytes().length > 0) {
+            blob.setName(targetName);
+            copiedFile = destFolder.createFile(blob);
+            info = info + " (Downloaded)";
+          } else {
+            throw new Error("HTTP Download Code " + fetchRes.getResponseCode());
+          }
+        } catch (fetchErr) {
+          throw new Error("Gagal menyalin (" + copyErr.message + ")");
+        }
       }
       
       return responseJSON({
