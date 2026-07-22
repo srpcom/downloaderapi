@@ -201,7 +201,8 @@ function doPost(e) {
       return responseJSON({
         status: 'success',
         id: newFolder.getId(),
-        name: newFolder.getName()
+        name: newFolder.getName(),
+        url: newFolder.getUrl()
       });
     }
     
