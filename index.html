@@ -3263,7 +3263,8 @@
             msg += ` <span style="font-size:0.8em; opacity:0.8">(${detailMsg})</span>`;
         }
 
-        div.innerHTML = `<span class="log-icon">${icon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${msg}</span> <span class="log-size">${size}</span>`;
+        const sizeStr = (size && size !== "undefined") ? size : "";
+        div.innerHTML = `<span class="log-icon">${icon}</span> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${msg}</span> <span class="log-size">${sizeStr}</span>`;
         logArea.appendChild(div);
         logArea.scrollTop = logArea.scrollHeight;
     }

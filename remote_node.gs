@@ -94,7 +94,8 @@ function doPost(e) {
         status: 'success',
         email: Session.getEffectiveUser().getEmail(),
         quota: MailApp.getRemainingDailyQuota(),
-        driveUsed: DriveApp.getStorageUsed()
+        driveUsed: DriveApp.getStorageUsed(),
+        version: "1.1"
       });
     }
     
@@ -267,7 +268,7 @@ function doPost(e) {
     }
     
     if (action === 'prepare_destination') {
-      return responseJSON({ status: 'success', message: "Koneksi teruji. Node siap menerima transfer data." });
+      return responseJSON({ status: 'success', message: "Koneksi teruji. Node siap menerima transfer data.", version: "1.1" });
     }
     
     if (action === 'absorb_file') {
