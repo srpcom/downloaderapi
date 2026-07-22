@@ -1288,6 +1288,7 @@
         } else {
             document.getElementById('ssoOverlay').style.display = 'none';
             if (container) container.style.display = 'block';
+            loadRemoteNodes();
         }
     }
 
@@ -2189,9 +2190,6 @@
         if(!ssoToken && !loginPassword) return;
         try {
             const res = await sendRequest({ action: 'get_remote_accounts' });
-            const tbody = document.getElementById('remoteList');
-            tbody.innerHTML = '';
-
             window.remoteAccountsData = (res.status === 'success' && res.list) ? res.list : [];
             
             // Populasikan options untuk targetAccountSelect pada Tab Cloner
@@ -2210,23 +2208,27 @@
                 targetSelect.value = currentVal || 'local';
             }
 
-            if (res.status === 'success' && res.list && res.list.length > 0) {
-                res.list.forEach(node => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${node.label}</td>
-                        <td>${node.email}</td>
-                        <td title="${node.url}">${node.url.substring(0, 35)}...</td>
-                        <td class="col-actions">
-                            <button class="btn-table" onclick="testRemoteNode('${node.url}', '${node.label}')">🔌 Tes Link</button>
-                            <button class="btn-table" style="background: var(--primary);" onclick="openRemoteExplorer('${node.id}', '${node.label}')">🔍 Jelajahi</button>
-                            <button class="btn-table btn-table-danger" onclick="deleteRemoteNode('${node.id}')">🗑️ Hapus</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #888;">Belum ada remote node yang tersimpan.</td></tr>`;
+            const tbody = document.getElementById('remoteList');
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (res.status === 'success' && res.list && res.list.length > 0) {
+                    res.list.forEach(node => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${node.label}</td>
+                            <td>${node.email}</td>
+                            <td title="${node.url}">${node.url.substring(0, 35)}...</td>
+                            <td class="col-actions">
+                                <button class="btn-table" onclick="testRemoteNode('${node.url}', '${node.label}')">🔌 Tes Link</button>
+                                <button class="btn-table" style="background: var(--primary);" onclick="openRemoteExplorer('${node.id}', '${node.label}')">🔍 Jelajahi</button>
+                                <button class="btn-table btn-table-danger" onclick="deleteRemoteNode('${node.id}')">🗑️ Hapus</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #888;">Belum ada remote node yang tersimpan.</td></tr>`;
+                }
             }
         } catch(e) {
             console.error(e);
