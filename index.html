@@ -779,7 +779,12 @@
 
         <div class="form-group">
             <label for="destUrl">Folder Tujuan (Opsional)</label>
-            <input type="text" id="destUrl" placeholder="Link folder tujuan Google Drive (jika kosong = Default)">
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="destUrl" placeholder="Link atau ID folder tujuan Google Drive (jika kosong = Default)" style="flex: 1;">
+                <button type="button" class="btn-clear" style="padding: 0 16px; background: var(--accent); color: white; display: flex; align-items: center; gap: 6px; font-weight: 500; height: 42px; border-radius: 8px;" onclick="openFolderPickerModal()">
+                    📁 Browse
+                </button>
+            </div>
         </div>
 
         <div class="form-group">
@@ -2654,6 +2659,175 @@
         } catch(err) {
             Swal.fire({ icon: 'error', title: 'Gagal Membuat Folder', text: err.message, background: '#111', color: '#fff' });
         }
+    }
+
+    // ============================================================================
+    // BROWSE & PICKER FOLDER TUJUAN (LOKAL & REMOTE)
+    // ============================================================================
+    let pickerCurrentFolderId = 'root';
+    let pickerFolderHistory = [];
+    let pickerCurrentFolderName = 'Root / Drive Saya';
+
+    function openFolderPickerModal(targetId = 'root') {
+        pickerCurrentFolderId = targetId;
+        pickerFolderHistory = [];
+        const targetAccVal = document.getElementById('targetAccountSelect').value;
+        const isRemote = (targetAccVal !== 'local');
+        
+        let selectedNode = null;
+        if (isRemote) {
+            selectedNode = (window.remoteAccountsData || []).find(n => (n.id && n.id === targetAccVal) || n.url === targetAccVal);
+        }
+
+        const targetNameStr = isRemote ? (selectedNode ? `${selectedNode.label} (${selectedNode.email})` : 'Remote Node') : 'Drive Utama (Lokal)';
+
+        Swal.fire({
+            title: '📁 Pilih Folder Tujuan',
+            html: `
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; margin-bottom:8px; text-align:left;">
+                    <span style="color:#aaa;">Target: <strong>${escapeHtml(targetNameStr)}</strong></span>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" id="btnPickerUp" class="btn-clear" onclick="navigatePickerUp()" style="padding:4px 10px; font-size:0.75rem; background:#333; color:#fff; border-radius:4px;">⬆️ Ke Atas</button>
+                        <button type="button" class="btn-clear" onclick="refreshPickerModal()" style="padding:4px 10px; font-size:0.75rem; background:#333; color:#fff; border-radius:4px;">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div id="pickerPath" style="text-align:left; font-weight:600; font-size:0.85rem; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:6px; margin-bottom:10px; word-break:break-all;">
+                    📂 Memuat...
+                </div>
+                <div id="pickerList" style="max-height:260px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px; background:#141418; text-align:left;">
+                    <div style="text-align:center; padding:20px; color:#aaa;">⏳ Memuat daftar folder...</div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '✅ Pilih Folder Ini',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: 'var(--success)',
+            cancelButtonColor: '#444',
+            background: '#111',
+            color: '#fff',
+            width: '540px',
+            didOpen: () => {
+                loadPickerFolders(pickerCurrentFolderId);
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const folderUrl = `https://drive.google.com/drive/folders/${pickerCurrentFolderId}`;
+                document.getElementById('destUrl').value = folderUrl;
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Folder Tujuan Terpilih!',
+                    html: `Folder: <strong>${escapeHtml(pickerCurrentFolderName)}</strong><br><span style="font-size:0.85rem; color:#aaa;">Link folder telah dimasukkan ke formulir.</span>`,
+                    timer: 1800,
+                    showConfirmButton: false,
+                    background: '#111',
+                    color: '#fff'
+                });
+            }
+        });
+    }
+
+    async function loadPickerFolders(folderId) {
+        const listEl = document.getElementById('pickerList');
+        const pathEl = document.getElementById('pickerPath');
+        const upBtn = document.getElementById('btnPickerUp');
+        if (!listEl) return;
+
+        listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">⏳ Memuat folder...</div>';
+
+        const targetAccVal = document.getElementById('targetAccountSelect').value;
+        const isRemote = (targetAccVal !== 'local');
+        let selectedNode = null;
+        if (isRemote) {
+            selectedNode = (window.remoteAccountsData || []).find(n => (n.id && n.id === targetAccVal) || n.url === targetAccVal);
+        }
+
+        try {
+            let res;
+            if (!isRemote) {
+                res = await sendRequest({ action: 'browse_folders', parentId: folderId });
+            } else {
+                if (!selectedNode) throw new Error('Remote Node tidak ditemukan');
+                res = await sendRequest({
+                    action: 'remote_proxy',
+                    nodeId: selectedNode.id,
+                    remoteAction: 'list_dir',
+                    parentId: folderId
+                });
+            }
+
+            if (res.status === 'success') {
+                pickerCurrentFolderId = res.currentId || folderId;
+                pickerCurrentFolderName = res.currentName || 'Root';
+
+                if (upBtn) {
+                    if (res.parentId && res.currentId !== 'root') {
+                        upBtn.disabled = false;
+                        upBtn.style.opacity = '1';
+                        upBtn.setAttribute('data-parent', res.parentId);
+                    } else {
+                        upBtn.disabled = true;
+                        upBtn.style.opacity = '0.4';
+                    }
+                }
+
+                if (pathEl) {
+                    pathEl.innerHTML = `📂 <strong>${escapeHtml(pickerCurrentFolderName)}</strong> <span style="font-size:0.75rem; opacity:0.6;">(${pickerCurrentFolderId})</span>`;
+                }
+
+                const folders = res.folders || [];
+                if (folders.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; padding:25px; color:#888;">📁 Tidak ada sub-folder di lokasi ini.</div>';
+                    return;
+                }
+
+                let html = '';
+                folders.forEach(f => {
+                    const safeName = escapeHtml(f.name);
+                    html += `
+                        <div onclick="navigateToSubfolder('${f.id}')" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; margin-bottom:4px; border-radius:6px; background:rgba(255,255,255,0.03); cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                            <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                                <span>📁</span>
+                                <span style="font-size:0.85rem; font-weight:500; color:#eee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</span>
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--accent); font-weight:600;">Buka ➔</span>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            } else {
+                throw new Error(res.message || 'Gagal membaca folder');
+            }
+        } catch(err) {
+            listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--error);">❌ Gagal: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    function navigateToSubfolder(subId) {
+        if (pickerCurrentFolderId) {
+            pickerFolderHistory.push(pickerCurrentFolderId);
+        }
+        loadPickerFolders(subId);
+    }
+
+    function navigatePickerUp() {
+        const upBtn = document.getElementById('btnPickerUp');
+        const parentId = upBtn ? upBtn.getAttribute('data-parent') : null;
+        if (parentId) {
+            loadPickerFolders(parentId);
+        } else if (pickerFolderHistory.length > 0) {
+            loadPickerFolders(pickerFolderHistory.pop());
+        } else {
+            loadPickerFolders('root');
+        }
+    }
+
+    function refreshPickerModal() {
+        loadPickerFolders(pickerCurrentFolderId);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     async function searchRemoteDrive() {
