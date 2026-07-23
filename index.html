@@ -2672,20 +2672,28 @@
         pickerCurrentFolderId = targetId;
         pickerFolderHistory = [];
         const targetAccVal = document.getElementById('targetAccountSelect').value;
-        const isRemote = (targetAccVal !== 'local');
-        
-        let selectedNode = null;
-        if (isRemote) {
-            selectedNode = (window.remoteAccountsData || []).find(n => (n.id && n.id === targetAccVal) || n.url === targetAccVal);
-        }
 
-        const targetNameStr = isRemote ? (selectedNode ? `${selectedNode.label} (${selectedNode.email})` : 'Remote Node') : 'Drive Utama (Lokal)';
+        let accountOptionsHtml = `<option value="local" ${targetAccVal === 'local' ? 'selected' : ''}>🏠 Drive Utama (Lokal)</option>`;
+        
+        (window.remoteAccountsData || []).forEach(node => {
+            const val = node.id || node.url;
+            const isSelected = (targetAccVal === val || targetAccVal === node.url);
+            const label = node.label || 'Remote Node';
+            const email = node.email || '';
+            accountOptionsHtml += `<option value="${escapeHtml(val)}" ${isSelected ? 'selected' : ''}>🔌 Remote: ${escapeHtml(label)} (${escapeHtml(email)})</option>`;
+        });
 
         Swal.fire({
             title: '📁 Pilih Folder Tujuan',
             html: `
+                <div style="margin-bottom:10px; text-align:left;">
+                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:4px; font-weight:600;">Akun / Node Target:</label>
+                    <select id="pickerAccountSelect" onchange="onPickerAccountChange()" style="width:100%; padding:8px 10px; background:#1c1c22; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:6px; font-size:0.85rem; font-family:inherit;">
+                        ${accountOptionsHtml}
+                    </select>
+                </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; margin-bottom:8px; text-align:left;">
-                    <span style="color:#aaa;">Target: <strong>${escapeHtml(targetNameStr)}</strong></span>
+                    <span style="font-size:0.75rem; color:#aaa;">Navigasi Folder:</span>
                     <div style="display:flex; gap:6px;">
                         <button type="button" id="btnPickerUp" class="btn-clear" onclick="navigatePickerUp()" style="padding:4px 10px; font-size:0.75rem; background:#333; color:#fff; border-radius:4px;">⬆️ Ke Atas</button>
                         <button type="button" class="btn-clear" onclick="refreshPickerModal()" style="padding:4px 10px; font-size:0.75rem; background:#333; color:#fff; border-radius:4px;">🔄 Refresh</button>
@@ -2694,7 +2702,7 @@
                 <div id="pickerPath" style="text-align:left; font-weight:600; font-size:0.85rem; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:6px; margin-bottom:10px; word-break:break-all;">
                     📂 Memuat...
                 </div>
-                <div id="pickerList" style="max-height:260px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px; background:#141418; text-align:left;">
+                <div id="pickerList" style="max-height:240px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px; background:#141418; text-align:left;">
                     <div style="text-align:center; padding:20px; color:#aaa;">⏳ Memuat daftar folder...</div>
                 </div>
             `,
@@ -2711,12 +2719,21 @@
             }
         }).then((result) => {
             if (result.isConfirmed) {
+                const accSelect = document.getElementById('pickerAccountSelect');
+                if (accSelect) {
+                    const chosenAcc = accSelect.value;
+                    const mainAccSelect = document.getElementById('targetAccountSelect');
+                    if (mainAccSelect && mainAccSelect.value !== chosenAcc) {
+                        mainAccSelect.value = chosenAcc;
+                        if (typeof onTargetAccountChange === 'function') onTargetAccountChange();
+                    }
+                }
                 const folderUrl = `https://drive.google.com/drive/folders/${pickerCurrentFolderId}`;
                 document.getElementById('destUrl').value = folderUrl;
                 Swal.fire({
                     icon: 'success',
                     title: 'Folder Tujuan Terpilih!',
-                    html: `Folder: <strong>${escapeHtml(pickerCurrentFolderName)}</strong><br><span style="font-size:0.85rem; color:#aaa;">Link folder telah dimasukkan ke formulir.</span>`,
+                    html: `Folder: <strong>${escapeHtml(pickerCurrentFolderName)}</strong><br><span style="font-size:0.85rem; color:#aaa;">Tautan folder & akun tujuan telah disinkronkan.</span>`,
                     timer: 1800,
                     showConfirmButton: false,
                     background: '#111',
@@ -2726,15 +2743,21 @@
         });
     }
 
+    function onPickerAccountChange() {
+        pickerFolderHistory = [];
+        loadPickerFolders('root');
+    }
+
     async function loadPickerFolders(folderId) {
         const listEl = document.getElementById('pickerList');
         const pathEl = document.getElementById('pickerPath');
         const upBtn = document.getElementById('btnPickerUp');
+        const accSelect = document.getElementById('pickerAccountSelect');
         if (!listEl) return;
 
         listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">⏳ Memuat folder...</div>';
 
-        const targetAccVal = document.getElementById('targetAccountSelect').value;
+        const targetAccVal = accSelect ? accSelect.value : document.getElementById('targetAccountSelect').value;
         const isRemote = (targetAccVal !== 'local');
         let selectedNode = null;
         if (isRemote) {
