@@ -4,17 +4,25 @@ async function forwardToGAS(payload) {
   try {
     console.log("Forwarding Telegram Payload to GAS (POST)...");
     
-    // EXPLICIT POST with redirect: "manual" so fetch does NOT convert POST into GET on 302 redirect!
+    // Step 1: Send initial POST request to trigger doPost(e)
     let res = await fetch(GAS_WEBAPP_URL, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: payload,
       redirect: "manual"
     });
     
-    console.log("GAS Request Triggered. Status:", res.status);
+    console.log("GAS Initial Response Status:", res.status);
+    
+    // Step 2: Fetch Google Apps Script echo output from Location header
+    if (res.status === 302 || res.status === 301 || res.status === 307 || res.status === 308) {
+      const location = res.headers.get("Location");
+      if (location) {
+        let res2 = await fetch(location, { method: "GET" });
+        let echoText = await res2.text();
+        console.log("GAS Execution Echo Result:", echoText);
+      }
+    }
   } catch(err) {
     console.error("GAS Forward Error:", err.toString());
   }
