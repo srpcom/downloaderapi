@@ -1,22 +1,28 @@
 const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz4RFANjPjkHL6nuMbNBtRUf3cRtQ5vz2DpIUF6mql8z4PMRgFxBKeTWVX_4pQUGENa/exec";
 
+async function forwardToGAS(payload) {
+  try {
+    console.log("Forwarding Telegram Payload to GAS:", payload);
+    let res = await fetch(GAS_WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload
+    });
+    let resText = await res.text();
+    console.log("GAS Response Status:", res.status, "Body:", resText.substring(0, 300));
+  } catch(err) {
+    console.error("GAS Forward Exception:", err.toString());
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     if (request.method === "POST") {
       try {
         const payload = await request.text();
         
-        // Fire-and-forget POST to Google Apps Script (redirect manual triggers doPost instantly)
-        ctx.waitUntil(
-          fetch(GAS_WEBAPP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: payload,
-            redirect: "manual"
-          }).catch(err => console.error("GAS POST Forward Error:", err))
-        );
+        ctx.waitUntil(forwardToGAS(payload));
         
-        // Instantly return HTTP 200 OK to Telegram (< 20ms)
         return new Response("OK", { status: 200 });
       } catch(e) {
         return new Response("OK", { status: 200 });
