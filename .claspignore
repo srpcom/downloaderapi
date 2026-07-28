@@ -1,0 +1,6 @@
+**/*.js
+!script.js
+downloadergdrive/**
+telegram-proxy/**
+node_modules/**
+.git/**
