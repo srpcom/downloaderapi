@@ -884,7 +884,12 @@
     <div class="tab-content" id="tab-upload">
         <div class="form-group">
             <label for="uploadDest">Folder Tujuan Upload (Opsional)</label>
-            <input type="text" id="uploadDest" placeholder="Nama, ID, atau Link Folder (Jika belum ada, otomatis dibuat)">
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="uploadDest" placeholder="Nama, ID, atau Link Folder (Jika belum ada, otomatis dibuat)" style="flex: 1;">
+                <button type="button" class="btn-clear" style="padding: 0 16px; background: var(--accent); color: white; display: flex; align-items: center; gap: 6px; font-weight: 500; height: 42px; border-radius: 8px;" onclick="openFolderPickerModal('root', 'uploadDest')">
+                    📁 Browse
+                </button>
+            </div>
         </div>
 
         <div class="upload-zone" id="dropZone" onclick="triggerFileInput()">
@@ -2667,9 +2672,11 @@
     let pickerCurrentFolderId = 'root';
     let pickerFolderHistory = [];
     let pickerCurrentFolderName = 'Root / Drive Saya';
+    let pickerTargetInputId = 'destUrl';
 
-    function openFolderPickerModal(targetId = 'root') {
+    function openFolderPickerModal(targetId = 'root', targetInputId = 'destUrl') {
         pickerCurrentFolderId = targetId;
+        pickerTargetInputId = targetInputId;
         pickerFolderHistory = [];
         const targetAccVal = document.getElementById('targetAccountSelect').value;
 
@@ -2729,7 +2736,8 @@
                     }
                 }
                 const folderUrl = `https://drive.google.com/drive/folders/${pickerCurrentFolderId}`;
-                document.getElementById('destUrl').value = folderUrl;
+                const targetInput = document.getElementById(pickerTargetInputId) || document.getElementById('destUrl');
+                if (targetInput) targetInput.value = folderUrl;
                 Swal.fire({
                     icon: 'success',
                     title: 'Folder Tujuan Terpilih!',
